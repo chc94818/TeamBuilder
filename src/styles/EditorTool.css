@@ -1,0 +1,165 @@
+/* Lineup.css */
+.editorToolContainer {
+  position: relative;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-areas: "content";
+  background-color: #022f56;
+  overflow: hidden; /* 確保內容不超出圓角容器 */
+}
+
+.toolPanel {
+  display: flex;
+  justify-content: space-around;
+  gap: 32px;
+
+  section {
+    display: flex;
+    flex-direction: column;
+    row-gap: 8px;
+  }
+}
+
+/* 容器排版 */
+.editorControlItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  width: 100%;
+  color: #fff;
+}
+
+/* Switch 主體 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+/* 隱藏原生 checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* 滑軌 */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #444;
+  transition: 0.4s;
+  border-radius: 20px;
+}
+
+/* 滑塊 (圓點) */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+/* 選中時的背景色 (例如綠色或紅色) */
+input:checked + .slider {
+  background-color: #52a9ff; /* 配合你之前的紅點顏色 */
+}
+
+/* 選中時圓點的移動 */
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* 狀態文字顏色微調 */
+.statusText {
+  font-weight: bold;
+  min-width: 30px;
+}
+
+.numberInput {
+  width: 48px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-family: monospace; /* 等寬字體讓數字對齊更專業 */
+  text-align: right;
+}
+
+/* 移除 Chrome/Safari 的上下小箭頭（選配，如果你覺得醜的話） */
+.numberInput::-webkit-inner-spin-button,
+.numberInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.editorOption {
+  width: 100%;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.inputGroup {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: space-between;
+
+  button {
+    flex: 1;
+    background-color: #52A9FF;
+    text-decoration: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  button:hover {
+    background-color: #636EBF;
+  }
+
+  .button1K {
+    background-color: #6C757D;
+  }
+
+  .button1K {
+    background-color: #17A2B8;
+  }
+
+  .button4K {
+    background-color: #FD7E14;
+  }
+
+  .button8K {
+    background-color: #FA003F;
+  }
+}
+
+.exportButtonsTitle {
+  margin-bottom: 8px;
+}

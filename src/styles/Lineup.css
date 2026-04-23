@@ -1,0 +1,172 @@
+/* Lineup.css */
+.lineupContainer {
+  position: relative;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-areas: "content";
+  background-color: #022F56;
+  overflow: hidden; /* 確保內容不超出圓角容器 */
+}
+
+/* 裝飾用的輔助線與樣式 */
+.rnd-development-box {
+  border: 2px dashed rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s;
+  z-index: 10;
+}
+
+.rnd-development-box:hover {
+  border-color: lime; /* 滑鼠移上去變綠色，方便確認範圍 */
+}
+
+/* ---------------------------------
+   開發模式：顯示虛線與手把
+---------------------------------- */
+
+.rnd-dev-active, .rnd-dev-hidden {
+  /* 關鍵 1：確保邊框計算在寬度內 */
+  box-sizing: border-box !important;
+  /* 關鍵 2：永遠保留 2px 的邊框佔位 */
+  border: 2px solid transparent !important; 
+}
+
+.rnd-dev-active {
+  border-color: lime !important; /* 只有在開啟時顯色 */
+  border-style: dashed !important;
+  background: rgba(0, 255, 0, 0.05);  /* 顯示淡淡的底色 */
+  cursor: move;
+  pointer-events: auto; 
+}
+
+/* 確保縮放手把在開發模式是看得到的 */
+.rnd-dev-active .react-resizable-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background-color: white !important;
+  border: 1px solid #333 !important;
+  border-radius: 50%;
+  bottom: 0 !important;
+  right: 0 !important;
+  display: block !important;
+}
+
+/* ---------------------------------
+   正式模式：完全隱藏輔助視覺
+---------------------------------- */
+.rnd-dev-hidden {
+  /* 移除邊框與底色，這會讓 Rnd 容器變透明，但內容物依然可見 */
+  border-color: transparent !important;
+  background: transparent !important;
+  
+  /* 確保即便 Rnd 在上層，滑鼠點擊也能穿透到下方的 PlayerCell (如果需要的話) */
+  pointer-events: none; 
+}
+
+/* 隱藏 react-rnd 產生的所有縮放控制點 */
+.rnd-dev-hidden .react-resizable-handle {
+  display: none !important;
+}
+
+.rnd-dev-active .playerContainer {
+  opacity: 30%;
+  pointer-events: none;
+}
+
+.rnd-dev-hidden .playerContainer {
+  pointer-events: auto;
+}
+
+
+/* 也可以在這邊定義縮放手把的樣式 */
+.react-resizable-handle {
+  background: white;
+  border-radius: 50%;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.backgroundContainer {
+  grid-area: content;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.background {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 這是被 Rnd 包裹的容器 */
+.playerContainer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  justify-items: center;
+  align-items: center;
+  width: 100% !important; /* 強制撐滿 Rnd 容器 */
+  height: 100% !important;
+  box-sizing: border-box;
+}
+
+.playerContainer {
+  .playerCell {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+.playerContainer {
+  display: grid;
+  width: 100%;
+  height: auto; /* 讓容器隨內容增長，或維持 100% */
+  align-content: start;
+
+  .gridItem {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+}
+
+/* 假設 PlayerCell 的最外層 class 是 .player-cell-wrapper */
+.playerCellContainer {
+  /* 使用傳入的百分比變數 */
+  width: var(--cell-width-percent);
+  /* 如果你不希望選手縮小到看不見，可以加一個最小值 */
+  min-width: 20px; 
+}
+
+.lineupPopMenu {
+  position: fixed;
+  background-color: #2B3269;
+  border: 1px solid;
+  border-radius: 8px;
+  z-index: 99;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  width: 100px;
+  overflow: hidden;
+
+
+  .removeButton {
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    transition: "background 0.2s";
+    user-select: none;
+  }
+
+  .removeButton:hover {
+    background-color: #404A9C;
+  }
+}

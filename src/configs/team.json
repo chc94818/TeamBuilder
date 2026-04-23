@@ -1,0 +1,12 @@
+{
+  "TeamNum": 4,
+  "Layout": {
+    "x": 9.62,
+    "y": 39.98,
+    "width": 78.59,
+    "height": 45.88
+  },
+  "CellSize": 100,
+  "ColumnGap": 4.4,
+  "RowGap": 8.1
+}
