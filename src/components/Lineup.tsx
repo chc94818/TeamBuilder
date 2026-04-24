@@ -12,9 +12,8 @@ import { useEditor } from "../context/Editor";
 import { useTeam } from "../context/Team";
 import html2canvas from "html2canvas";
 
-// 定義暴露給父組件的介面
 export interface LineupBoardHandle {
-  exportLineupImage: (targetWidth: number) => Promise<string>; // 指定參數與回傳值為 Promise
+  exportLineupImage: (targetWidth: number) => Promise<string | null>;
 }
 
 interface LineupProps {
@@ -33,18 +32,25 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       setLineupLayout,
       playerCellAspectRatio,
     } = useEditor();
-    const { lineupPlayers, removeFromLineup } = useTeam();
+
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const { lineupPlayers, movePlayer, removeFromLineup, assignPlayerToSlot } =
+      useTeam();
     const [contextMenu, setContextMenu] = useState<{
       x: number;
       y: number;
       index: number;
     } | null>(null);
-    const menuRef = useRef<HTMLDivElement>(null); // 新增：用於取得選單 DOM 的 Ref
-    // 處理右鍵點擊事件
+
+    const menuRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const lineupContentRef = useRef<HTMLDivElement>(null);
+    const rafRef = useRef<number | null>(null);
+
     const handleContextMenu = (e: React.MouseEvent, index: number) => {
-      // 只有當該格子有選手時才觸發右鍵選單
       if (lineupPlayers[index]) {
-        e.preventDefault(); // 阻斷瀏覽器預設選單
+        e.preventDefault();
         setContextMenu({
           x: e.clientX,
           y: e.clientY,
@@ -53,18 +59,93 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       }
     };
 
-    // 點擊頁面其他地方時關閉選單
+    const onDragStart = (e: React.DragEvent, index: number) => {
+      const player = lineupPlayers[index];
+      if (!player) return;
+
+      setDraggedIndex(index);
+      e.dataTransfer.setData("fromLineupIndex", index.toString());
+      e.dataTransfer.setData("player", JSON.stringify(player));
+      e.dataTransfer.effectAllowed = "move";
+
+      // 視覺調整：僅在拖拽開始後微調透明度
+      const target = e.target as HTMLElement;
+      requestAnimationFrame(() => {
+        target.style.opacity = "0.4";
+      });
+    };
+
+    const onDragEnd = (e: React.DragEvent) => {
+      // 1. 恢復透明度
+      if (e.target instanceof HTMLElement) {
+        e.target.style.opacity = "1";
+      }
+
+      // 2. 新增：判斷是否拖曳到了「非法區域」
+      // 如果 dropEffect 為 "none"，代表沒有被任何有效 Drop Target 接收
+      if (e.dataTransfer.dropEffect === "none" && draggedIndex !== null) {
+        console.log("Dropped in void, removing player...");
+        removeFromLineup(draggedIndex);
+      }
+
+      // 3. 清理狀態
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+    };
+
+    // ... 同時，為了讓這個行為更嚴謹，原本的 onDropOnBackground 也可以保留
+    const onDropOnBackground = (e: React.DragEvent) => {
+      const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
+      if (fromLineupIndex !== "") {
+        removeFromLineup(parseInt(fromLineupIndex));
+      }
+      setDragOverIndex(null);
+      setDraggedIndex(null);
+    };
+
+    const onDragOver = (e: React.DragEvent, index: number) => {
+      e.preventDefault();
+      if (dragOverIndex !== index) {
+        setDragOverIndex(index);
+      }
+    };
+
+    const onDropOnGrid = (e: React.DragEvent, toIndex: number) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (draggedIndex !== null) {
+        movePlayer(draggedIndex, toIndex);
+      } else {
+        const benchPlayerData = e.dataTransfer.getData("player");
+        if (benchPlayerData) {
+          try {
+            const player = JSON.parse(benchPlayerData);
+            assignPlayerToSlot(player, toIndex);
+          } catch (error) {
+            console.error("Parse failed", error);
+          }
+        }
+      }
+      // 放置完成後立即清理
+      setDragOverIndex(null);
+      setDraggedIndex(null);
+    };
+
+    // 處理滑鼠離開容器時的殘留
+    const handleContainerDragLeave = (e: React.DragEvent) => {
+      // 只有滑鼠真正離開 playerContainer (而不是進入其中的 PlayerCell) 才重置
+      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+        setDragOverIndex(null);
+      }
+    };
+
     useEffect(() => {
       const handleCloseMenu = () => setContextMenu(null);
       window.addEventListener("click", handleCloseMenu);
       return () => window.removeEventListener("click", handleCloseMenu);
     }, []);
 
-    const containerRef = useRef<HTMLDivElement>(null);
-    const lineupContentRef = useRef<HTMLDivElement>(null);
-    const rafRef = useRef<number | null>(null);
-
-    // 1. 本地像素狀態：這是 Rnd 渲染的唯一事實來源
     const [pixelLayout, setPixelLayout] = useState({
       x: 0,
       y: 0,
@@ -72,27 +153,16 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       height: 0,
     });
 
-    // 當選單狀態改變時的副作用處理
     useEffect(() => {
       if (contextMenu) {
-        // 1. 鎖定捲動：防止使用者在選單開啟時滾動背景
-        const originalStyle = window.getComputedStyle(document.body).overflow;
         document.body.style.overflow = "hidden";
-
-        // 2. 自動聚焦：讓鍵盤操作或螢幕閱讀器能定位到選單
-        // 使用 requestAnimationFrame 確保 DOM 已經渲染完成
-        requestAnimationFrame(() => {
-          menuRef.current?.focus();
-        });
-
-        // 清理函式：當選單關閉或組件卸載時，恢復捲動
+        requestAnimationFrame(() => menuRef.current?.focus());
         return () => {
-          document.body.style.overflow = originalStyle;
+          document.body.style.overflow = "";
         };
       }
     }, [contextMenu]);
 
-    // 2. 同步邏輯：百分比 (Context) -> 像素 (Local)
     const syncPixelsFromPercent = useCallback(() => {
       if (containerRef.current) {
         const { offsetWidth: cw, offsetHeight: ch } = containerRef.current;
@@ -107,24 +177,17 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       }
     }, [lineupLayout]);
 
-    // 3. 初始化與視窗縮放監聽
     useEffect(() => {
-      // 初次掛載時，稍微延遲確保容器寬高已渲染完成
       const timer = setTimeout(syncPixelsFromPercent, 100);
       window.addEventListener("resize", syncPixelsFromPercent);
-
       return () => {
         window.removeEventListener("resize", syncPixelsFromPercent);
         clearTimeout(timer);
       };
     }, [syncPixelsFromPercent]);
 
-    // 4. 使用 rAF 更新全域面板數值 (像素 -> 百分比)
     const updatePanelValues = (x: number, y: number, w: number, h: number) => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
         if (containerRef.current) {
           const { offsetWidth: cw, offsetHeight: ch } = containerRef.current;
@@ -141,18 +204,11 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       });
     };
 
-    // 暴露方法給父組件
     useImperativeHandle(ref, () => ({
       exportLineupImage: async (targetWidth: number) => {
         if (!lineupContentRef.current) return null;
-
         const contentNode = lineupContentRef.current;
-
-        // 1. 獲取當前容器在畫面上的實際像素寬度
         const currentWidth = contentNode.offsetWidth;
-
-        // 2. 計算所需的縮放比例 (目標寬度 / 當前寬度)
-        // 例如：目標 3840px / 目前 1280px = scale: 3
         const calculatedScale = targetWidth / currentWidth;
 
         const options = {
@@ -160,14 +216,12 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
           backgroundColor: null,
           useCORS: true,
           logging: false,
-          // 截圖前確保移除開發用的 Rnd 選取框樣式
-          ignoreElements: (el: HTMLElement) =>
+          ignoreElements: (el: Element) =>
             el.classList.contains("rnd-dev-active"),
         };
 
         try {
-          // 執行截圖
-          const canvas = await html2canvas(contentNode, options);
+          const canvas = await html2canvas(contentNode as HTMLElement, options);
           return canvas.toDataURL("image/png", 1.0);
         } catch (error) {
           console.error("Export failed:", error);
@@ -175,16 +229,13 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
         }
       },
     }));
+
     return (
       <div
         className="lineupContainer"
         ref={containerRef}
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          overflow: "hidden",
-        }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDropOnBackground}
       >
         <div className="lineupContent" ref={lineupContentRef}>
           <div className="backgroundLayer">
@@ -198,7 +249,6 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
             disableDragging={!isLineupRndActive}
             enableResizing={isLineupRndActive}
             bounds="parent"
-            // 拖動中：更新本地像素並同步至面板 (透過 rAF)
             onDrag={(e, d) => {
               setPixelLayout((prev) => ({ ...prev, x: d.x, y: d.y }));
               updatePanelValues(
@@ -208,23 +258,22 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
                 pixelLayout.height,
               );
             }}
-            // 縮放中：更新本地像素並同步至面板 (透過 rAF)
             onResize={(e, dir, ref, delta, pos) => {
               const newW = ref.offsetWidth;
               const newH = ref.offsetHeight;
               setPixelLayout({ width: newW, height: newH, ...pos });
               updatePanelValues(pos.x, pos.y, newW, newH);
             }}
-            // 停止時確保清除排程
             onDragStop={() => {
-              if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+              if (rafRef.current) cancelAnimationFrame(rafRef.current);
             }}
             onResizeStop={() => {
-              if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+              if (rafRef.current) cancelAnimationFrame(rafRef.current);
             }}
           >
             <div
               className="playerContainer"
+              onDragLeave={handleContainerDragLeave}
               style={
                 {
                   gridTemplateColumns: `repeat(${teamsPerRow}, 1fr)`,
@@ -237,15 +286,23 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
               {lineupPlayers.map((player, index) => (
                 <div
                   key={index}
-                  className="gridItemContainer"
+                  className={`gridItemContainer ${dragOverIndex === index ? "drag-over" : ""}`}
+                  draggable={!!player}
+                  onDragStart={(e) => onDragStart(e, index)}
+                  onDragEnd={onDragEnd}
+                  onDragOver={(e) => onDragOver(e, index)}
+                  onDrop={(e) => onDropOnGrid(e, index)}
                   style={{
                     transform: `scale(var(--cell-scale))`,
                     aspectRatio: playerCellAspectRatio,
+                    // 只有當 dragOver 且不是正在拖拽自己的那一格才顯示 outline
+                    outline:
+                      dragOverIndex === index ? "2px solid #fff" : "none",
                   }}
                 >
                   <div
                     className="gridItem"
-                    onContextMenu={(e) => handleContextMenu(e, index)} // 綁定右鍵事件
+                    onContextMenu={(e) => handleContextMenu(e, index)}
                   >
                     <PlayerCell player={player} />
                   </div>
@@ -255,58 +312,24 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
           </Rnd>
         </div>
 
-        {/* 右鍵選單 UI */}
         {contextMenu && (
           <div
             className="lineupPopMenu"
-            ref={menuRef} // 綁定 Ref
-            tabIndex={-1} // 關鍵：讓 div 變得可以被 focus
-            style={{
-              top: contextMenu.y,
-              left: contextMenu.x,
-            }}
+            ref={menuRef}
+            tabIndex={-1}
+            style={{ top: contextMenu.y, left: contextMenu.x }}
           >
             <div
               className="removeButton"
               onClick={() => {
                 removeFromLineup(contextMenu.index);
-                setContextMenu(null); // 移除後主動關閉
+                setContextMenu(null);
               }}
             >
               Remove Player
             </div>
           </div>
         )}
-
-        {/* Debug Panel: 顯示百分比與像素資訊 */}
-        {/* {isLineupRndActive && (
-        <div
-          className="devDataPanel"
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            background: "rgba(0, 0, 0, 0.8)",
-            color: "#fff",
-            padding: "12px",
-            borderRadius: "4px",
-            fontSize: "12px",
-            fontFamily: "monospace",
-            zIndex: 9999,
-            pointerEvents: "none",
-            border: "1px solid #444"
-          }}
-        >
-          <div style={{ color: "#00ff00", marginBottom: "5px" }}>[ Lineup Layout % ]</div>
-          <div>X: {lineupLayout.x.toFixed(2)}% | Y: {lineupLayout.y.toFixed(2)}%</div>
-          <div>W: {lineupLayout.w.toFixed(2)}% | H: {lineupLayout.h.toFixed(2)}%</div>
-          
-          <div style={{ color: "#00ccff", marginTop: "10px", marginBottom: "5px" }}>[ Grid Info ]</div>
-          <div>PerRow: {teamsPerRow}</div>
-          <div>Gap: C {columnGap.toFixed(2)}% / R {rowGap.toFixed(2)}%</div>
-          <div>Cell: {playerCellSize.toFixed(2)}%</div>
-        </div>
-      )} */}
       </div>
     );
   },

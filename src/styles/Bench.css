@@ -7,10 +7,20 @@
   position: relative;
   width: 320px;
   height: 100%;
-  padding: 16px;
+  padding: 8px;
   border-radius: 12px;
   box-sizing: border-box;
   background-color: #022f56;
+  transition: background-color 0.2s ease, border 0.2s ease;
+  
+  border: 2px dashed transparent;
+}
+
+/* 當有選手拖過來時的視覺反饋 */
+.benchContainer.dragOver {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
 }
 
 .bench {
