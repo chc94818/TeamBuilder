@@ -78,6 +78,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
         height: lineupLayout.h,
       },
       CellSize: playerCellSize,
+      CellAspectRatio: playerCellAspectRatio,
       ColumnGap: columnGap,
       RowGap: rowGap,
     };

@@ -88,6 +88,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     _setPlayerCellSize(CellSize);
     setColumnGap(ColumnGap);
     setRowGap(RowGap);
+    setPlayerCellAspectRatio(CellAspectRatio);
     setLineupLayout({
       x: Layout.x,
       y: Layout.y,
