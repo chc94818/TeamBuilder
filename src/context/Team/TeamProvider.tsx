@@ -4,7 +4,7 @@ import { useEditor } from "../Editor";
 
 const allAssets = import.meta.glob(
   "../../assets/groups/**/*.{png,jpg,jpeg,svg,webp}",
-  { eager: true }
+  { eager: true },
 );
 
 type MultiGroupPlayerMap = Record<string, Record<number, Player>>;
@@ -17,9 +17,11 @@ interface AssetModule {
 export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { currentGroupId, teamsPerRow } = useEditor();
+  const { currentGroupId, teamsPerRow, teamSizeMode, manualTeamMemberSize } =
+    useEditor();
 
-  const [allGroupsPlayerMap, setAllGroupsPlayerMap] = useState<MultiGroupPlayerMap>({});
+  const [allGroupsPlayerMap, setAllGroupsPlayerMap] =
+    useState<MultiGroupPlayerMap>({});
 
   const groupDataMap = useMemo(() => {
     const map: Record<string, { background: string; players: Player[] }> = {};
@@ -55,18 +57,27 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({
     return allGroupsPlayerMap[currentGroupId] || {};
   }, [allGroupsPlayerMap, currentGroupId]);
 
-
   const totalSlots = useMemo(() => {
-    // 使用當前組別的球員數量來計算格數
+    if (teamSizeMode === "manual") {
+      return manualTeamMemberSize * teamsPerRow;
+    }
+
     const playersCount = currentGroupData.players.length || 1;
     const playersPerTeam = Math.ceil(playersCount / teamsPerRow);
     return teamsPerRow * playersPerTeam;
-  }, [teamsPerRow, currentGroupData.players]);
+  }, [
+    teamSizeMode,
+    manualTeamMemberSize,
+    currentGroupData.players,
+    teamsPerRow,
+  ]);
 
   const lineupPlayers = useMemo(() => {
-    return Array.from({ length: totalSlots }, (_, i) => currentPlayerMap[i] || null);
+    return Array.from(
+      { length: totalSlots },
+      (_, i) => currentPlayerMap[i] || null,
+    );
   }, [currentPlayerMap, totalSlots]);
-
 
   const assignPlayerToSlot = (player: Player, targetIndex: number) => {
     setAllGroupsPlayerMap((prev) => {
@@ -74,7 +85,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // 移動/交換邏輯
       const oldIndex = Object.keys(newGroupMap).find(
-        (key) => newGroupMap[parseInt(key)].id === player.id
+        (key) => newGroupMap[parseInt(key)].id === player.id,
       );
 
       if (oldIndex !== undefined) {

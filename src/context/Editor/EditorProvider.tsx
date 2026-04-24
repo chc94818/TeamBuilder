@@ -21,19 +21,22 @@ interface TeamConfig {
 const teamConfig = teamConfigData as TeamConfig;
 const STORAGE_KEY = "editor_layout_cache";
 
-const groupFiles = import.meta.glob("../../assets/groups/**/*.{png,jpg,jpeg,svg,webp}", {
-  eager: true,
-});
+const groupFiles = import.meta.glob(
+  "../../assets/groups/**/*.{png,jpg,jpeg,svg,webp}",
+  {
+    eager: true,
+  },
+);
 
 // 2. 解析路徑並提取唯一的資料夾名稱 (Group IDs)
 const autoDetectedGroups = (() => {
   // 使用 Map 紀錄每個 Group 擁有的子目錄
   const groupIntegrityMap = new Map<string, Set<string>>();
-  
+
   Object.keys(groupFiles).forEach((path) => {
     // 預期路徑結構: ../../assets/groups/[GroupName]/[SubDir]/file.png
     const parts = path.split("/");
-    const groupName = parts[4]; 
+    const groupName = parts[4];
     const subDir = parts[5]; // 應該是 backgrounds 或 players
 
     if (groupName && (subDir === "background" || subDir === "players")) {
@@ -63,8 +66,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     teamConfig;
   const [isLineupRndActive, setIsLineupRndActive] = useState(false);
   const [currentGroupId, setCurrentGroupId] = useState<string>(
-    autoDetectedGroups[0] || ""
+    autoDetectedGroups[0] || "",
   );
+  const [teamSizeMode, setTeamSizeMode] = useState<"auto" | "manual">("auto");
+  const [manualTeamMemberSize, setManualTeamMemberSize] = useState(4); // 預設一個數字
 
   // 嘗試從 localStorage 讀取暫存，如果沒有則使用 JSON 預設值
   const getInitialValue = (key: string, defaultValue: number | object) => {
@@ -163,6 +168,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         currentGroupId,
         setCurrentGroupId,
         availableGroups: autoDetectedGroups,
+        teamSizeMode,
+        setTeamSizeMode,
+        manualTeamMemberSize,
+        setManualTeamMemberSize,
       }}
     >
       {children}

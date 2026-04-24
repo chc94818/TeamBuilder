@@ -27,6 +27,10 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     setCurrentGroupId,
     availableGroups,
     currentGroupId,
+    teamSizeMode,
+    setTeamSizeMode,
+    manualTeamMemberSize,
+    setManualTeamMemberSize,
   } = useEditor();
   const { clearTeam } = useTeam();
 
@@ -103,6 +107,8 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     URL.revokeObjectURL(url);
   };
 
+  const isManual = teamSizeMode === "manual";
+
   return (
     <div className="editorToolContainer">
       <h2>Editor Tool</h2>
@@ -146,6 +152,45 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
               </div>
             </div>
           </div>
+          <div className="editorOption teamPlayersNumTool">
+            <div className="editorControlItem">
+              <div className="twoLineContainer">
+                <div className="toolGroup">
+                  <label>手動設定人數</label>
+                  <div className="inputGroup">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={isManual}
+                        onChange={(e) =>
+                          setTeamSizeMode(e.target.checked ? "manual" : "auto")
+                        }
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                    <span className="statusText">
+                      {isManual ? "ON" : "OFF"}
+                    </span>
+                  </div>
+                </div>
+                <div className={`toolGroup ${isManual ? "": "disabled"}`}>
+                  <label>設置隊伍人數</label>
+                  <div className="inputGroup">
+                    <input
+                      type="number"
+                      value={manualTeamMemberSize}
+                      onChange={(e) =>
+                        setManualTeamMemberSize(parseInt(e.target.value) || 0)
+                      }
+                      className="numberInput"
+                    />
+                    <span className="unit">人/隊</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="editorOption editorControlGroup">
             <div className="editorControlItem">
               <span>左邊距 (x)</span>

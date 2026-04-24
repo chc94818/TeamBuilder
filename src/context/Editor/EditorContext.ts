@@ -26,6 +26,10 @@ interface EditorContextType {
   currentGroupId: string;
   setCurrentGroupId: (id: string) => void;
   availableGroups: string[];
+  teamSizeMode: "auto" | "manual";
+  setTeamSizeMode: (mode: "auto" | "manual") => void;
+  manualTeamMemberSize: number;
+  setManualTeamMemberSize: (size: number) => void;
 }
 
 // 建立 Context 物件 (初始值設為 undefined)

@@ -35,6 +35,13 @@
     border-radius: 8px;
     padding: 16px;
   }
+
+  .statusText,
+  .unit {
+    font-size: 10px;
+    width: 28px;
+    text-align: start;
+  }
 }
 
 /* 容器排版 */
@@ -46,6 +53,25 @@
   font-size: 14px;
   width: 100%;
   color: #fff;
+}
+
+.twoLineContainer {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 8px;
+
+  .toolGroup {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .toolGroup.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(0.5);
+  }
 }
 
 /* Switch 主體 */
@@ -193,11 +219,11 @@ input:checked + .slider:before {
   }
 
   .downloadButton {
-    background-color: #01C38D;
+    background-color: #01c38d;
   }
 
   .clearLineupsButton {
-    background-color: #F5A201;
+    background-color: #f5a201;
   }
 }
 
