@@ -134,8 +134,9 @@
   }
 
   .gridItemContainer.drag-over {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    .playerCell {
+      outline: dashed 2px #0affff;
+    }
   }
 
   .gridItem {

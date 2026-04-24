@@ -13,8 +13,6 @@ function Bench() {
 
   // 1. 新增狀態：記錄目前滑鼠經過哪一個板凳球員
   const [benchDragOverId, setBenchDragOverId] = useState<string | null>(null);
-  const [isGeneralDragOver, setIsGeneralDragOver] = useState(false);
-
   const onBenchDragStart = (e: React.DragEvent, player: Player) => {
     e.dataTransfer.setData("player", JSON.stringify(player));
     // 為了讓 Lineup 知道是從 Bench 來的，我們可以加個標記
@@ -27,7 +25,6 @@ function Bench() {
     e.preventDefault();
     e.stopPropagation();
     setBenchDragOverId(null); // 清除高亮
-    setIsGeneralDragOver(false);
 
     const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
     if (fromLineupIndex !== "") {
@@ -44,22 +41,9 @@ function Bench() {
 
   return (
     <div
-      className={`benchContainer ${isGeneralDragOver ? "dragOver" : ""}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-        // 強制游標為 move，避免出現複製的 + 號
-        e.dataTransfer.dropEffect = "move";
-        setIsGeneralDragOver(true);
-      }}
-      onDragLeave={(e) => {
-        // 只有離開整個容器時才取消背景高亮
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setIsGeneralDragOver(false);
-        }
-      }}
+      className={`benchContainer`}
       onDrop={(e) => {
         e.preventDefault();
-        setIsGeneralDragOver(false);
         const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
         if (fromLineupIndex !== "") {
           removeFromLineup(parseInt(fromLineupIndex));
@@ -97,12 +81,6 @@ function Bench() {
               }}
               onDragLeave={() => setBenchDragOverId(null)}
               onDrop={(e) => onDropOnBenchItem(e, player)}
-              style={{
-                // 這裡可以根據 isCurrentTarget 加上 inline style
-                outline: isCurrentTarget ? "2px solid #4ade80" : "none",
-                transform: isCurrentTarget ? "scale(1.05)" : "scale(1)",
-                transition: "all 0.2s ease",
-              }}
             >
               <PlayerCell player={player} />
             </div>

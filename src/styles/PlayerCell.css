@@ -7,3 +7,8 @@
     width: 100%;
   }
 }
+
+.playerCell.empty {
+  background-color: #105F68;
+  opacity: 0.3;
+}

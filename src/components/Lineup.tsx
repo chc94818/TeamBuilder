@@ -296,8 +296,6 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
                     transform: `scale(var(--cell-scale))`,
                     aspectRatio: playerCellAspectRatio,
                     // 只有當 dragOver 且不是正在拖拽自己的那一格才顯示 outline
-                    outline:
-                      dragOverIndex === index ? "2px solid #fff" : "none",
                   }}
                 >
                   <div

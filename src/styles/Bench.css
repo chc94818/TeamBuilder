@@ -11,8 +11,10 @@
   border-radius: 12px;
   box-sizing: border-box;
   background-color: #022f56;
-  transition: background-color 0.2s ease, border 0.2s ease;
-  
+  transition:
+    background-color 0.2s ease,
+    border 0.2s ease;
+
   border: 2px dashed transparent;
 }
 
@@ -25,9 +27,12 @@
 
 /* 拖曳經過時的效果 */
 .benchPlayerCellContainer.drag-over {
-  background-color: rgba(74, 222, 128, 0.15); /* 淡淡的綠色 */
-  box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
-  z-index: 5;
+  
+  .playerCell {
+    outline: dashed 2px #0AFFFF;
+  }
+
+  /* transform: scale(1.05); */
 }
 
 .bench {
@@ -40,17 +45,14 @@
 
   .benchPlayerCellContainer {
     width: 140px;
-    background-color: rgba(255, 255, 255, 0.03);
     cursor: pointer;
     filter: none;
     transition: all 0.2s ease;
-    border-color: rgba(255, 255, 255, 0.1);
-  
+
     &.disabled {
       cursor: default;
       opacity: 0.2;
       filter: grayscale(1) brightness(0.5);
-      border-color: transparent;
     }
   }
 
