@@ -178,13 +178,20 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
     }, [lineupLayout]);
 
     useEffect(() => {
-      const timer = setTimeout(syncPixelsFromPercent, 100);
-      window.addEventListener("resize", syncPixelsFromPercent);
-      return () => {
-        window.removeEventListener("resize", syncPixelsFromPercent);
-        clearTimeout(timer);
-      };
-    }, [syncPixelsFromPercent]);
+      if (!containerRef.current) return;
+
+      // 建立監聽器：當容器大小變動，或是 lineupLayout 變動時，立刻同步
+      const observer = new ResizeObserver(() => {
+        syncPixelsFromPercent();
+      });
+
+      observer.observe(containerRef.current);
+
+      // 初始同步一次
+      syncPixelsFromPercent();
+
+      return () => observer.disconnect();
+    }, [syncPixelsFromPercent]); // 當 lineupLayout 改變時，這裡也會重新觸發
 
     const updatePanelValues = (x: number, y: number, w: number, h: number) => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
