@@ -133,12 +133,6 @@
     justify-content: center;
   }
 
-  .gridItemContainer.drag-over {
-    .playerCell {
-      outline: dashed 2px #0affff;
-    }
-  }
-
   .gridItem {
     width: 100%;
     height: 100%;

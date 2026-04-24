@@ -25,16 +25,6 @@
   border-radius: 8px;
 }
 
-/* 拖曳經過時的效果 */
-.benchPlayerCellContainer.drag-over {
-  
-  .playerCell {
-    outline: dashed 2px #0AFFFF;
-  }
-
-  /* transform: scale(1.05); */
-}
-
 .bench {
   display: flex;
   flex-wrap: wrap;

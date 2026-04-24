@@ -1,4 +1,5 @@
 import { useEditor } from "../context/Editor";
+import { useTeam } from "../context/Team";
 const RESOLUTIONS = {
   "1K": 1920,
   "2K": 2560,
@@ -24,6 +25,8 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     playerCellAspectRatio,
     setPlayerCellAspectRatio,
   } = useEditor();
+  const { clearTeam } = useTeam();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
 
@@ -133,11 +136,14 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
               <div className="actionButtons">
                 {/* 重置按鈕 */}
                 <button onClick={resetToDefault} className="resetButton">
-                  重置設定
+                  重置格子位置
                 </button>
                 {/* 下載按鈕 */}
                 <button onClick={downloadConfig} className="downloadButton">
-                  下載設定檔
+                  下載格子設定檔
+                </button>
+                <button className="btn-clear" onClick={clearTeam}>
+                  重置隊伍版面
                 </button>
               </div>
             </div>

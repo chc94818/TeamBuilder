@@ -61,3 +61,7 @@ img {
 #centerRight {
   height: stretch;
 }
+
+#spacer {
+  height: 48px;
+}

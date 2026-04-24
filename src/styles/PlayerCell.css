@@ -1,8 +1,8 @@
-
 .playerCell {
   width: 100%;
   border-radius: 999px;
   overflow: hidden;
+  cursor: pointer;
   img {
     width: 100%;
   }
@@ -10,4 +10,15 @@
 
 .playerCell.empty {
   background-color: rgba(16, 95, 104, 0.3);
+}
+
+/* 拖曳經過時的效果 */
+.benchPlayerCellContainer,
+.gridItemContainer {
+  &.drag-over {
+    .playerCell {
+      outline: dashed 2px #0affff;
+      outline-offset: 1px;
+    }
+  }
 }
