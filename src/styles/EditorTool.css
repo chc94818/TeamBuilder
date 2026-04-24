@@ -16,10 +16,23 @@
   justify-content: space-around;
   gap: 32px;
 
+  h3 {
+    color: #fff;
+    margin: 24px auto 8px;
+  }
+
+  h3:first-child {
+    margin-top: 4px;
+  }
+
   section {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     row-gap: 8px;
+    border: #5e94b9 solid 2px;
+    border-radius: 8px;
+    padding: 16px;
   }
 }
 
@@ -119,6 +132,7 @@ input:checked + .slider:before {
 .inputGroup {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
 
   .numberSlider {
@@ -134,7 +148,7 @@ input:checked + .slider:before {
 
   button {
     flex: 1;
-    background-color: #52A9FF;
+    background-color: #52a9ff;
     text-decoration: none;
     border: none;
     padding: 8px;
@@ -144,23 +158,35 @@ input:checked + .slider:before {
   }
 
   button:hover {
-    background-color: #636EBF;
+    background-color: #636ebf;
   }
 
   .button1K {
-    background-color: #6C757D;
+    background-color: #6c757d;
   }
 
   .button1K {
-    background-color: #17A2B8;
+    background-color: #17a2b8;
   }
 
   .button4K {
-    background-color: #FD7E14;
+    background-color: #fd7e14;
   }
 
   .button8K {
-    background-color: #FA003F;
+    background-color: #fa003f;
+  }
+
+  .resetButton {
+    background-color: #fa003f;
+  }
+
+  .downloadButton {
+    background-color: #01C38D;
+  }
+
+  .clearLineupsButton {
+    background-color: #F5A201;
   }
 }
 
