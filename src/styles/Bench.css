@@ -10,8 +10,7 @@
   padding: 16px;
   border-radius: 12px;
   box-sizing: border-box;
-  background-color: #022F56;
-
+  background-color: #022f56;
 }
 
 .bench {
@@ -21,16 +20,26 @@
   width: 100%;
   flex-grow: 1;
   gap: 8px;
+
   .benchPlayerCellContainer {
     width: 140px;
     border-radius: 999px;
     overflow: hidden;
-    background-color: rgba(255,255,255,0.03);
+    background-color: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    filter: none;
+    transition: all 0.2s ease;
+    border-color: rgba(255, 255, 255, 0.1);
+  
+    &.disabled {
+      cursor: default;
+      opacity: 0.2;
+      filter: grayscale(1) brightness(0.5);
+      border-color: transparent;
+    }
   }
-
 
   .playerCell {
     width: 100%;
   }
 }
-

@@ -1,6 +1,6 @@
 // App.tsx
 import { useRef } from "react";
-import background from "./assets/background/4team_e.jpg";
+import background from "./assets/background/4team_e_2.jpg";
 import "./styles/App.css";
 import Bench from "./components/Bench";
 import Lineup, { type LineupBoardHandle } from "./components/Lineup";

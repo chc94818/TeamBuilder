@@ -21,6 +21,8 @@ interface EditorContextType {
     h: number;
   }) => void;
   resetToDefault: () => void;
+  playerCellAspectRatio: number;
+  setPlayerCellAspectRatio: (val: number) => void;
 }
 
 // 建立 Context 物件 (初始值設為 undefined)

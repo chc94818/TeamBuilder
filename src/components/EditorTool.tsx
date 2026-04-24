@@ -17,10 +17,12 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     columnGap,
     setColumnGap,
     rowGap,
-    setRowGap,
+    // setRowGap,
     lineupLayout,
     setLineupLayout,
     resetToDefault,
+    playerCellAspectRatio,
+    setPlayerCellAspectRatio,
   } = useEditor();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
@@ -146,7 +148,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                 <h3 className="exportButtonsTitle">輸出截圖 (Export Image)</h3>
                 <div className="actionButtons">
                   {Object.entries(RESOLUTIONS).map(([label, width]) => (
-                    <button 
+                    <button
                       key={label}
                       onClick={() => onExport(width)}
                       className={`exportButton button${label}`}
@@ -212,11 +214,43 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
             </div>
           </div>
         </section>
-
         <section className="rightPanel">
+          <div className="editorOption playerplayerCellAspectRatioTool">
+            <div className="editorControlItem">
+              <span>選手卡片寬高比</span>
+              <span className="inputGroup">
+                <input
+                  id="playerplayerCellAspectRatioSlider"
+                  type="range"
+                  min="0.1"
+                  max="10.0"
+                  step="0.1"
+                  value={playerCellAspectRatio.toFixed(1)}
+                  onChange={(e) =>
+                    setPlayerCellAspectRatio(parseFloat(e.target.value))
+                  }
+                />
+                {/* 數字輸入框：鍵盤精確輸入 */}
+                <input
+                  id="playerplayerCellAspectRatioInput"
+                  type="number"
+                  min="0.1"
+                  max="10.0"
+                  step="0.1"
+                  value={playerCellAspectRatio.toFixed(1)}
+                  onChange={(e) =>
+                    setPlayerCellAspectRatio(parseFloat(e.target.value))
+                  }
+                  onBlur={handleBlur}
+                  className="numberInput"
+                />
+                <span className="unit">%</span>
+              </span>
+            </div>
+          </div>
           <div className="editorOption playerCellSizeTool">
             <div className="editorControlItem">
-              <span>選手膠囊大小</span>
+              <span>選手卡片大小</span>
               <span className="inputGroup">
                 <input
                   id="playerCellSizeSlider"
@@ -234,8 +268,8 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                 <input
                   id="playerCellSizeInput"
                   type="number"
-                  min="1"
-                  max="100"
+                  min="50"
+                  max="150"
                   step="0.1"
                   value={playerCellSize.toFixed(1)}
                   onChange={handleChange}
@@ -274,8 +308,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
             </div>
           </div>
 
-          <div className="editorOption GridGapTool">
-            {/* Row Gap 調整 */}
+          {/* <div className="editorOption GridGapTool">
             <div className="editorControlItem">
               <span>垂直間距</span>
               <span className="inputGroup">
@@ -299,7 +332,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                 <span className="unit">%</span>
               </span>
             </div>
-          </div>
+          </div> */}
         </section>
       </div>
     </div>

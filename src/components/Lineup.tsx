@@ -31,6 +31,7 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       rowGap,
       lineupLayout,
       setLineupLayout,
+      playerCellAspectRatio,
     } = useEditor();
     const { lineupPlayers, removeFromLineup } = useTeam();
     const [contextMenu, setContextMenu] = useState<{
@@ -226,22 +227,24 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
               className="playerContainer"
               style={
                 {
-                  display: "grid",
                   gridTemplateColumns: `repeat(${teamsPerRow}, 1fr)`,
                   columnGap: `${columnGap}%`,
                   rowGap: `${rowGap}%`,
-                  width: "100%",
                   "--cell-scale": `${playerCellSize / 100}`,
                 } as React.CSSProperties
               }
             >
               {lineupPlayers.map((player, index) => (
-                <div key={index} className="gridItem">
+                <div
+                  key={index}
+                  className="gridItemContainer"
+                  style={{
+                    transform: `scale(var(--cell-scale))`,
+                    aspectRatio: playerCellAspectRatio,
+                  }}
+                >
                   <div
-                    style={{
-                      transform: `scale(var(--cell-scale))`,
-                      transformOrigin: "center",
-                    }}
+                    className="gridItem"
                     onContextMenu={(e) => handleContextMenu(e, index)} // 綁定右鍵事件
                   >
                     <PlayerCell player={player} />

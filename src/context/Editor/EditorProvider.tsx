@@ -11,6 +11,7 @@ interface TeamConfig {
     width: number;
     height: number;
   };
+  CellAspectRatio: number;
   CellSize: number;
   ColumnGap: number;
   RowGap: number;
@@ -24,11 +25,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   // 2. 使用結構解構從 teamConfig 提取數值
-  const { TeamNum, Layout, CellSize, ColumnGap, RowGap } = teamConfig;
+  const { TeamNum, Layout, CellAspectRatio, CellSize, ColumnGap, RowGap } =
+    teamConfig;
   const [isLineupRndActive, setIsLineupRndActive] = useState(false);
 
   // 嘗試從 localStorage 讀取暫存，如果沒有則使用 JSON 預設值
-  const getInitialValue = (key: string, defaultValue: number|object) => {
+  const getInitialValue = (key: string, defaultValue: number | object) => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const cache = JSON.parse(saved);
@@ -40,12 +42,16 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [teamsPerRow, setTeamsPerRow] = useState(
     getInitialValue("teamsPerRow", TeamNum),
   );
+  const [playerCellAspectRatio, setPlayerCellAspectRatio] = useState(
+    getInitialValue("playerCellAspectRatio", CellAspectRatio),
+  );
   const [playerCellSize, _setPlayerCellSize] = useState(
     getInitialValue("playerCellSize", CellSize),
   );
   const [columnGap, setColumnGap] = useState(
     getInitialValue("columnGap", ColumnGap),
   );
+
   const [rowGap, setRowGap] = useState(getInitialValue("rowGap", RowGap));
   const [lineupLayout, setLineupLayout] = useState(
     getInitialValue("lineupLayout", {
@@ -58,9 +64,23 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // --- 功能 3: 暫存狀態 (useEffect) ---
   useEffect(() => {
-    const configToCache = { teamsPerRow, playerCellSize, columnGap, rowGap, lineupLayout };
+    const configToCache = {
+      teamsPerRow,
+      playerCellAspectRatio,
+      playerCellSize,
+      columnGap,
+      rowGap,
+      lineupLayout,
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(configToCache));
-  }, [teamsPerRow, playerCellSize, columnGap, rowGap, lineupLayout]);
+  }, [
+    teamsPerRow,
+    playerCellAspectRatio,
+    playerCellSize,
+    columnGap,
+    rowGap,
+    lineupLayout,
+  ]);
 
   // --- 功能 1: 重置回預設值 ---
   const resetToDefault = () => {
@@ -68,7 +88,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     _setPlayerCellSize(CellSize);
     setColumnGap(ColumnGap);
     setRowGap(RowGap);
-    setLineupLayout({ x: Layout.x, y: Layout.y, w: Layout.width, h: Layout.height });
+    setLineupLayout({
+      x: Layout.x,
+      y: Layout.y,
+      w: Layout.width,
+      h: Layout.height,
+    });
     localStorage.removeItem(STORAGE_KEY); // 清除暫存
   };
 
@@ -95,6 +120,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         lineupLayout,
         setLineupLayout,
         resetToDefault,
+        playerCellAspectRatio,
+        setPlayerCellAspectRatio,
       }}
     >
       {children}
