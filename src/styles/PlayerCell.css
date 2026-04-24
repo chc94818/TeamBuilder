@@ -9,6 +9,5 @@
 }
 
 .playerCell.empty {
-  background-color: #105F68;
-  opacity: 0.3;
+  background-color: rgba(16, 95, 104, 0.3);
 }
