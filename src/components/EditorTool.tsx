@@ -229,6 +229,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   onChange={(e) =>
                     setPlayerCellAspectRatio(parseFloat(e.target.value))
                   }
+                  className="numberSlider"
                 />
                 {/* 數字輸入框：鍵盤精確輸入 */}
                 <input
@@ -261,7 +262,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   value={playerCellSize.toFixed(1)}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  style={{ cursor: "pointer" }}
+                  className="numberSlider"
                 />
 
                 {/* 數字輸入框：鍵盤精確輸入 */}
@@ -294,6 +295,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   step="0.1"
                   value={columnGap}
                   onChange={handleGapChange(setColumnGap)}
+                  className="numberSlider"
                 />
                 <input
                   id="gridColumeGapInput"

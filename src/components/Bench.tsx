@@ -3,55 +3,106 @@ import PlayerCell from "./PlayerCell";
 import { useTeam, type Player } from "../context/Team";
 
 function Bench() {
-  const { benchPlayers, lineupPlayers, addToLineup, removeFromLineup } = useTeam();
-  // 用於控制拖曳經過時的視覺狀態
-  const [isDragOver, setIsDragOver] = useState(false);
+  const {
+    benchPlayers,
+    lineupPlayers,
+    addToLineup,
+    removeFromLineup,
+    assignPlayerToSlot,
+  } = useTeam();
+
+  // 1. 新增狀態：記錄目前滑鼠經過哪一個板凳球員
+  const [benchDragOverId, setBenchDragOverId] = useState<string | null>(null);
+  const [isGeneralDragOver, setIsGeneralDragOver] = useState(false);
 
   const onBenchDragStart = (e: React.DragEvent, player: Player) => {
-    // 將球員資料轉成字串塞進 dataTransfer
     e.dataTransfer.setData("player", JSON.stringify(player));
-    // 設定滑鼠游標圖示為 "copy"
-    e.dataTransfer.effectAllowed = "copy";
+    // 為了讓 Lineup 知道是從 Bench 來的，我們可以加個標記
+    e.dataTransfer.setData("source", "bench");
+    e.dataTransfer.effectAllowed = "move";
   };
 
-  // 處理從 Lineup 拖回來的邏輯
-  const onDropOnBench = (e: React.DragEvent) => {
+  // 處理掉落在板凳球員身上的替換邏輯
+  const onDropOnBenchItem = (e: React.DragEvent, targetPlayer: Player) => {
     e.preventDefault();
-    setIsDragOver(false);
+    e.stopPropagation();
+    setBenchDragOverId(null); // 清除高亮
+    setIsGeneralDragOver(false);
 
-    // 取得來自 Lineup 的 Index
     const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
-
     if (fromLineupIndex !== "") {
-      // 如果資料來源是 Lineup，就執行移除，選手就會在板凳區「恢復亮度」
-      removeFromLineup(parseInt(fromLineupIndex));
-      console.log("Player returned to bench");
+      const lineupIdx = parseInt(fromLineupIndex);
+      const isTargetUsed = lineupPlayers.some((p) => p?.id === targetPlayer.id);
+
+      if (!isTargetUsed) {
+        assignPlayerToSlot(targetPlayer, lineupIdx);
+      } else {
+        removeFromLineup(lineupIdx);
+      }
     }
   };
 
   return (
     <div
-      className={`benchContainer ${isDragOver ? "dragOver" : ""}`}
+      className={`benchContainer ${isGeneralDragOver ? "dragOver" : ""}`}
       onDragOver={(e) => {
-        e.preventDefault(); // 必須 preventDefault 才能觸發 drop
-        setIsDragOver(true);
+        e.preventDefault();
+        // 強制游標為 move，避免出現複製的 + 號
+        e.dataTransfer.dropEffect = "move";
+        setIsGeneralDragOver(true);
       }}
-      onDragLeave={() => setIsDragOver(false)}
-      onDrop={onDropOnBench}
+      onDragLeave={(e) => {
+        // 只有離開整個容器時才取消背景高亮
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsGeneralDragOver(false);
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsGeneralDragOver(false);
+        const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
+        if (fromLineupIndex !== "") {
+          removeFromLineup(parseInt(fromLineupIndex));
+        }
+      }}
     >
       <h3>Available Players ({benchPlayers.length})</h3>
 
       <div className="bench">
         {benchPlayers.map((player) => {
           const isUsed = lineupPlayers.some((p) => p?.id === player.id);
+          const isCurrentTarget = benchDragOverId === player.id;
 
           return (
             <div
-              className={`benchPlayerCellContainer ${isUsed ? "disabled" : ""}`}
               key={player.id}
+              className={`benchPlayerCellContainer ${isUsed ? "disabled" : ""} ${isCurrentTarget ? "drag-over" : ""}`}
               onClick={() => !isUsed && addToLineup(player)}
               draggable={!isUsed}
               onDragStart={(e) => onBenchDragStart(e, player)}
+              onDragOver={(e) => {
+                // 關鍵修正：檢查 dataTransfer 裡是否有來自 Lineup 的 Index
+                // 注意：在 dragover 過程中，HTML5 為了安全不允許讀取 getData 的具體內容，
+                // 但我們可以透過 types 來判斷是否存在該類型
+                const isFromLineup =
+                  e.dataTransfer.types.includes("fromlineupindex");
+
+                if (!isUsed && isFromLineup) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.dataTransfer.dropEffect = "move";
+                  if (benchDragOverId !== player.id)
+                    setBenchDragOverId(player.id);
+                }
+              }}
+              onDragLeave={() => setBenchDragOverId(null)}
+              onDrop={(e) => onDropOnBenchItem(e, player)}
+              style={{
+                // 這裡可以根據 isCurrentTarget 加上 inline style
+                outline: isCurrentTarget ? "2px solid #4ade80" : "none",
+                transform: isCurrentTarget ? "scale(1.05)" : "scale(1)",
+                transition: "all 0.2s ease",
+              }}
             >
               <PlayerCell player={player} />
             </div>
