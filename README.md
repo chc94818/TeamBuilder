@@ -2,8 +2,8 @@
 A React + TypeScript tool for building and previewing team rosters.
 
 🖼️ **ASSETS**
-- Put the background.jpg to the src/assets/background/
-- Put the [players_name].jpg to the  src/assets/players/
+- Put the background.jpg to the src/assets/groups/[group_name]/background/
+- Put the [players_name].jpg to the  src/assets/groups/[group_name]/players/
 
 🚀 **Features**
 - **Dynamic Lineup**: Auto-creates slots from player assets; shows empty placeholders.

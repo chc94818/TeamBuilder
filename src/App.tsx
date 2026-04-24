@@ -1,6 +1,5 @@
 // App.tsx
 import { useRef } from "react";
-import background from "./assets/background/background.jpg";
 import "./styles/App.css";
 import Bench from "./components/Bench";
 import Lineup, { type LineupBoardHandle } from "./components/Lineup";
@@ -32,8 +31,7 @@ function App() {
         <section id="center">
           <section id="centerLeft">
             {/* 現在 Lineup 和 Bench 內部會直接透過 useTeam 拿資料，不再需要傳 playerList */}
-            <Lineup ref={lineupRef} background={background} />
-
+            <Lineup ref={lineupRef} />
           </section>
           <section id="centerRight">
             <Bench />

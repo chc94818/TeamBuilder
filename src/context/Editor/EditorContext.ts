@@ -23,6 +23,9 @@ interface EditorContextType {
   resetToDefault: () => void;
   playerCellAspectRatio: number;
   setPlayerCellAspectRatio: (val: number) => void;
+  currentGroupId: string;
+  setCurrentGroupId: (id: string) => void;
+  availableGroups: string[];
 }
 
 // 建立 Context 物件 (初始值設為 undefined)

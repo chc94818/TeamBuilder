@@ -2,103 +2,140 @@ import React, { useState, useMemo } from "react";
 import { TeamContext, type Player } from "./TeamContext";
 import { useEditor } from "../Editor";
 
-// 載入球員圖片 (保持原本邏輯)
-const imageModules = import.meta.glob<{ default: string }>(
-  "../../assets/players/*.{png,jpg,jpeg,SVG}",
+const allAssets = import.meta.glob(
+  "../../assets/groups/**/*.{png,jpg,jpeg,svg,webp}",
   { eager: true }
 );
 
-const allPlayers: Player[] = Object.entries(imageModules).map(([path, mod]) => {
-  const fileName = path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "";
-  return { id: fileName, name: fileName, url: mod.default };
-});
+type MultiGroupPlayerMap = Record<string, Record<number, Player>>;
 
-export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { teamsPerRow } = useEditor();
+interface AssetModule {
+  default: string; // 假設它是圖片路徑或組件
+  [key: string]: unknown; // 允許其他具名匯出
+}
 
-  // 1. 核心狀態：使用 Map 存儲 { index: Player }
-  // 這樣不論網格如何變動，資料結構都不會因為陣列長度改變而位移
-  const [playerMap, setPlayerMap] = useState<Record<number, Player>>({});
+export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const { currentGroupId, teamsPerRow } = useEditor();
 
-  // 2. 派生狀態 (Derived State)：計算總格數
-  // 24人 7隊的邏輯：確保是 teamsPerRow 的倍數
+  const [allGroupsPlayerMap, setAllGroupsPlayerMap] = useState<MultiGroupPlayerMap>({});
+
+  const groupDataMap = useMemo(() => {
+    const map: Record<string, { background: string; players: Player[] }> = {};
+
+    Object.entries(allAssets).forEach(([path, mod]: [string, AssetModule]) => {
+      const parts = path.split("/");
+      const groupName = parts[4];
+      const subDir = parts[5];
+      const fileName = parts[parts.length - 1].replace(/\.[^/.]+$/, "");
+
+      if (!map[groupName]) {
+        map[groupName] = { background: "", players: [] };
+      }
+
+      if (subDir === "background") {
+        map[groupName].background = mod.default;
+      } else if (subDir === "players") {
+        map[groupName].players.push({
+          id: `${groupName}_${fileName}`,
+          name: fileName,
+          url: mod.default,
+        });
+      }
+    });
+    return map;
+  }, []);
+
+  const currentGroupData = useMemo(() => {
+    return groupDataMap[currentGroupId] || { background: "", players: [] };
+  }, [currentGroupId, groupDataMap]);
+
+  const currentPlayerMap = useMemo(() => {
+    return allGroupsPlayerMap[currentGroupId] || {};
+  }, [allGroupsPlayerMap, currentGroupId]);
+
+
   const totalSlots = useMemo(() => {
-    const playersPerTeam = Math.ceil(allPlayers.length / teamsPerRow);
+    // 使用當前組別的球員數量來計算格數
+    const playersCount = currentGroupData.players.length || 1;
+    const playersPerTeam = Math.ceil(playersCount / teamsPerRow);
     return teamsPerRow * playersPerTeam;
-  }, [teamsPerRow]);
+  }, [teamsPerRow, currentGroupData.players]);
 
-  // 3. 組合渲染用的陣列：這是給 Lineup 組件 map 用的
-  // 當 teamsPerRow 改變，這裡會直接產生新陣列，不觸發額外的 useEffect
   const lineupPlayers = useMemo(() => {
-    return Array.from({ length: totalSlots }, (_, i) => playerMap[i] || null);
-  }, [playerMap, totalSlots]);
+    return Array.from({ length: totalSlots }, (_, i) => currentPlayerMap[i] || null);
+  }, [currentPlayerMap, totalSlots]);
 
-  // --- 操作方法 ---
 
   const assignPlayerToSlot = (player: Player, targetIndex: number) => {
-    setPlayerMap((prev) => {
-      const newMap = { ...prev };
-      // 找出該球員是否已在陣容中，若有則移除舊位置 (實現移動/交換)
-      const oldIndex = Object.keys(newMap).find(key => newMap[parseInt(key)].id === player.id);
-      
+    setAllGroupsPlayerMap((prev) => {
+      const newGroupMap = { ...(prev[currentGroupId] || {}) };
+
+      // 移動/交換邏輯
+      const oldIndex = Object.keys(newGroupMap).find(
+        (key) => newGroupMap[parseInt(key)].id === player.id
+      );
+
       if (oldIndex !== undefined) {
         const oldIdxNum = parseInt(oldIndex);
-        const targetPlayer = newMap[targetIndex];
-        if (targetPlayer) {
-          newMap[oldIdxNum] = targetPlayer; // 交換
-        } else {
-          delete newMap[oldIdxNum]; // 單純移動
-        }
+        const targetPlayer = newGroupMap[targetIndex];
+        if (targetPlayer) newGroupMap[oldIdxNum] = targetPlayer;
+        else delete newGroupMap[oldIdxNum];
       }
-      
-      newMap[targetIndex] = player;
-      return newMap;
+
+      newGroupMap[targetIndex] = player;
+      return { ...prev, [currentGroupId]: newGroupMap };
     });
   };
 
   const movePlayer = (fromIndex: number, toIndex: number) => {
-    setPlayerMap((prev) => {
-      const newMap = { ...prev };
-      const fromPlayer = newMap[fromIndex];
-      const toPlayer = newMap[toIndex];
+    setAllGroupsPlayerMap((prev) => {
+      const newGroupMap = { ...(prev[currentGroupId] || {}) };
+      const fromPlayer = newGroupMap[fromIndex];
+      const toPlayer = newGroupMap[toIndex];
 
-      if (fromPlayer) newMap[toIndex] = fromPlayer;
-      else delete newMap[toIndex];
+      if (fromPlayer) newGroupMap[toIndex] = fromPlayer;
+      else delete newGroupMap[toIndex];
 
-      if (toPlayer) newMap[fromIndex] = toPlayer;
-      else delete newMap[fromIndex];
+      if (toPlayer) newGroupMap[fromIndex] = toPlayer;
+      else delete newGroupMap[fromIndex];
 
-      return newMap;
+      return { ...prev, [currentGroupId]: newGroupMap };
     });
   };
 
   const addToLineup = (player: Player) => {
-    // 檢查是否已存在
-    if (Object.values(playerMap).some(p => p.id === player.id)) return;
-    
-    // 找到第一個空位 (null)
+    if (Object.values(currentPlayerMap).some((p) => p.id === player.id)) return;
+
     for (let i = 0; i < totalSlots; i++) {
-      if (!playerMap[i]) {
-        setPlayerMap(prev => ({ ...prev, [i]: player }));
+      if (!currentPlayerMap[i]) {
+        assignPlayerToSlot(player, i);
         break;
       }
     }
   };
 
   const removeFromLineup = (index: number) => {
-    setPlayerMap((prev) => {
-      const newMap = { ...prev };
-      delete newMap[index];
-      return newMap;
+    setAllGroupsPlayerMap((prev) => {
+      const newGroupMap = { ...(prev[currentGroupId] || {}) };
+      delete newGroupMap[index];
+      return { ...prev, [currentGroupId]: newGroupMap };
     });
   };
 
-  const clearTeam = () => setPlayerMap({});
+  const clearTeam = () => {
+    setAllGroupsPlayerMap((prev) => ({
+      ...prev,
+      [currentGroupId]: {},
+    }));
+  };
 
   return (
     <TeamContext.Provider
       value={{
-        benchPlayers: allPlayers,
+        benchPlayers: currentGroupData.players, // 這裡會隨組別切換
+        currentBackground: currentGroupData.background, // 提供背景給 Lineup
         lineupPlayers,
         addToLineup,
         movePlayer,

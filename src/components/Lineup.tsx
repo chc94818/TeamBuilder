@@ -16,12 +16,7 @@ export interface LineupBoardHandle {
   exportLineupImage: (targetWidth: number) => Promise<string | null>;
 }
 
-interface LineupProps {
-  background: string;
-}
-
-const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
-  ({ background }: LineupProps, ref) => {
+const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
     const {
       isLineupRndActive,
       teamsPerRow,
@@ -35,7 +30,7 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
 
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const { lineupPlayers, movePlayer, removeFromLineup, assignPlayerToSlot } =
+    const { lineupPlayers, movePlayer, removeFromLineup, assignPlayerToSlot, currentBackground } =
       useTeam();
     const [contextMenu, setContextMenu] = useState<{
       x: number;
@@ -84,7 +79,6 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       // 2. 新增：判斷是否拖曳到了「非法區域」
       // 如果 dropEffect 為 "none"，代表沒有被任何有效 Drop Target 接收
       if (e.dataTransfer.dropEffect === "none" && draggedIndex !== null) {
-        console.log("Dropped in void, removing player...");
         removeFromLineup(draggedIndex);
       }
 
@@ -246,7 +240,7 @@ const Lineup = forwardRef<LineupBoardHandle, LineupProps>(
       >
         <div className="lineupContent" ref={lineupContentRef}>
           <div className="backgroundLayer">
-            <img src={background} className="background" alt="background" />
+            <img src={currentBackground} className="background" alt="background" />
           </div>
 
           <Rnd

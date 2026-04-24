@@ -24,8 +24,17 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     resetToDefault,
     playerCellAspectRatio,
     setPlayerCellAspectRatio,
+    setCurrentGroupId,
+    availableGroups,
+    currentGroupId,
   } = useEditor();
   const { clearTeam } = useTeam();
+
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newGroupId = e.target.value;
+    setCurrentGroupId(newGroupId);
+    clearTeam(); // 確保切換時舊組別的球員不會留在畫面上
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
@@ -290,6 +299,29 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                 />
                 <span className="unit">%</span>
               </div>
+            </div>
+          </div>
+
+          <h3>組別設定</h3>
+          <div className="editorOption groupSelectTool">
+            <div className="editorControlItem">
+              <span>當前組別</span>
+              <select
+                id="groupSelect"
+                value={currentGroupId}
+                onChange={handleGroupChange}
+                className="groupSelect"
+              >
+                {availableGroups.length > 0 ? (
+                  availableGroups.map((group) => (
+                    <option key={group} value={group}>
+                      {group.replace(/_/g, " ")} {/* 將底線換成空格比較美觀 */}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>未偵測到有效群組</option>
+                )}
+              </select>
             </div>
           </div>
 

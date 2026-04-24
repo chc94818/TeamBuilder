@@ -8,6 +8,7 @@ export interface Player {
 }
 
 interface TeamContextType {
+  currentBackground: string;
   benchPlayers: Player[]; // 所有的原始球員名單
   lineupPlayers: (Player | null)[]; // 當前陣容 (扁平陣列)
   addToLineup: (player: Player) => void;
