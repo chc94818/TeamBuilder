@@ -34,8 +34,10 @@
 
   display: flex;
   align-items: center;
+  border: 2px solid transparent;
 
   .playerImg {
+    flex-shrink: 0;
     aspect-ratio: 1;
     height: 100%;
     display: flex;

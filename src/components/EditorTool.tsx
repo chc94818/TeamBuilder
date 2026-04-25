@@ -262,7 +262,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   min="0.1"
                   max="10.0"
                   step="0.1"
-                  value={playerCellAspectRatio.toFixed(1)}
+                  value={playerCellAspectRatio.toFixed(2)}
                   onChange={(e) =>
                     setPlayerCellAspectRatio(parseFloat(e.target.value))
                   }
@@ -275,7 +275,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   min="0.1"
                   max="10.0"
                   step="0.1"
-                  value={playerCellAspectRatio.toFixed(1)}
+                  value={playerCellAspectRatio.toFixed(2)}
                   onChange={(e) =>
                     setPlayerCellAspectRatio(parseFloat(e.target.value))
                   }
