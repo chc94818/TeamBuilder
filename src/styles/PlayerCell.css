@@ -60,6 +60,23 @@
     white-space: nowrap;
     font-family: NotoSansTC;
     background-color: rgba(224,230,227, 0.7);
+    line-height: 1.2em;
+    flex-direction: column;
+    color: #145B79;
+    -webkit-text-stroke: 1px #fff;
+    paint-order: stroke fill;
+
+    &.large {
+      font-size: 16px;
+    }
+
+    &.medium {
+      font-size: 13px;
+    }
+
+    &.small {
+      font-size: 10px;
+    }
   }
 }
 
