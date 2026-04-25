@@ -34,7 +34,7 @@
 
   display: flex;
   align-items: center;
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
 
   .playerImg {
     flex-shrink: 0;
@@ -59,6 +59,7 @@
     align-items: center;
     white-space: nowrap;
     font-family: NotoSansTC;
+    background-color: rgba(224,230,227, 0.7);
   }
 }
 

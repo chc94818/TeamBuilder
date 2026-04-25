@@ -32,16 +32,9 @@ img {
   margin: auto;
   margin-top: 16px;
   margin-bottom: 16px;
-  width: 100%;
-  min-width: 1280px;
-  max-width: 1440px;
+  width: 1280px;
   padding: 0 64px;
   box-sizing: border-box;
-
-  @media (max-width: 1280px) {
-    width: 980px;
-    box-sizing: border-box;
-  }
 
   /* @media (max-width: 1024px) {
     padding: 16px 20px 24px;

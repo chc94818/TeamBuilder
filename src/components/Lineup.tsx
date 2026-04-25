@@ -2,12 +2,10 @@ import React, {
   useState,
   useRef,
   useEffect,
-  useCallback,
   forwardRef,
   useImperativeHandle,
 } from "react";
 import { Rnd } from "react-rnd";
-// import PlayerCell from "./PlayerCell";
 import PlayerCellV2 from "./PlayerCellV2";
 import { useEditor } from "../context/Editor";
 import { useTeam } from "../context/Team";
@@ -18,322 +16,230 @@ export interface LineupBoardHandle {
 }
 
 const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
-    const {
-      isLineupRndActive,
-      teamsPerRow,
-      playerCellSize,
-      columnGap,
-      rowGap,
-      lineupLayout,
-      setLineupLayout,
-      playerCellAspectRatio,
-    } = useEditor();
+  const {
+    isLineupRndActive,
+    teamsPerRow,
+    playerCellSize,
+    columnGap,
+    rowGap,
+    lineupLayout,
+    setLineupLayout,
+    playerCellAspectRatio,
+  } = useEditor();
 
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const { lineupPlayers, movePlayer, removeFromLineup, assignPlayerToSlot, currentBackground } =
-      useTeam();
-    const [contextMenu, setContextMenu] = useState<{
-      x: number;
-      y: number;
-      index: number;
-    } | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const { lineupPlayers, movePlayer, removeFromLineup, assignPlayerToSlot, currentBackground } =
+    useTeam();
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    index: number;
+  } | null>(null);
 
-    const menuRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const lineupContentRef = useRef<HTMLDivElement>(null);
-    const rafRef = useRef<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lineupContentRef = useRef<HTMLDivElement>(null);
 
-    const handleContextMenu = (e: React.MouseEvent, index: number) => {
-      if (lineupPlayers[index]) {
-        e.preventDefault();
-        setContextMenu({
-          x: e.clientX,
-          y: e.clientY,
-          index: index,
-        });
-      }
-    };
+  // ----------------------------------------------------------------
+  // 拖拽與右鍵邏輯 (保持不變)
+  // ----------------------------------------------------------------
 
-    const onDragStart = (e: React.DragEvent, index: number) => {
-      const player = lineupPlayers[index];
-      if (!player) return;
-
-      setDraggedIndex(index);
-      e.dataTransfer.setData("fromLineupIndex", index.toString());
-      e.dataTransfer.setData("player", JSON.stringify(player));
-      e.dataTransfer.effectAllowed = "move";
-
-      // 視覺調整：僅在拖拽開始後微調透明度
-      const target = e.target as HTMLElement;
-      requestAnimationFrame(() => {
-        target.style.opacity = "0.4";
-      });
-    };
-
-    const onDragEnd = (e: React.DragEvent) => {
-      // 1. 恢復透明度
-      if (e.target instanceof HTMLElement) {
-        e.target.style.opacity = "1";
-      }
-
-      // 2. 新增：判斷是否拖曳到了「非法區域」
-      // 如果 dropEffect 為 "none"，代表沒有被任何有效 Drop Target 接收
-      if (e.dataTransfer.dropEffect === "none" && draggedIndex !== null) {
-        removeFromLineup(draggedIndex);
-      }
-
-      // 3. 清理狀態
-      setDraggedIndex(null);
-      setDragOverIndex(null);
-    };
-
-    // ... 同時，為了讓這個行為更嚴謹，原本的 onDropOnBackground 也可以保留
-    const onDropOnBackground = (e: React.DragEvent) => {
-      const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
-      if (fromLineupIndex !== "") {
-        removeFromLineup(parseInt(fromLineupIndex));
-      }
-      setDragOverIndex(null);
-      setDraggedIndex(null);
-    };
-
-    const onDragOver = (e: React.DragEvent, index: number) => {
+  const handleContextMenu = (e: React.MouseEvent, index: number) => {
+    if (lineupPlayers[index]) {
       e.preventDefault();
-      if (dragOverIndex !== index) {
-        setDragOverIndex(index);
-      }
-    };
+      setContextMenu({ x: e.clientX, y: e.clientY, index });
+    }
+  };
 
-    const onDropOnGrid = (e: React.DragEvent, toIndex: number) => {
-      e.preventDefault();
-      e.stopPropagation();
+  const onDragStart = (e: React.DragEvent, index: number) => {
+    const player = lineupPlayers[index];
+    if (!player) return;
+    setDraggedIndex(index);
+    e.dataTransfer.setData("fromLineupIndex", index.toString());
+    e.dataTransfer.setData("player", JSON.stringify(player));
+    e.dataTransfer.effectAllowed = "move";
+    const target = e.target as HTMLElement;
+    requestAnimationFrame(() => { target.style.opacity = "0.4"; });
+  };
 
-      if (draggedIndex !== null) {
-        movePlayer(draggedIndex, toIndex);
-      } else {
-        const benchPlayerData = e.dataTransfer.getData("player");
-        if (benchPlayerData) {
-          try {
-            const player = JSON.parse(benchPlayerData);
-            assignPlayerToSlot(player, toIndex);
-          } catch (error) {
-            console.error("Parse failed", error);
-          }
-        }
-      }
-      // 放置完成後立即清理
-      setDragOverIndex(null);
-      setDraggedIndex(null);
-    };
+  const onDragEnd = (e: React.DragEvent) => {
+    if (e.target instanceof HTMLElement) e.target.style.opacity = "1";
+    if (e.dataTransfer.dropEffect === "none" && draggedIndex !== null) {
+      removeFromLineup(draggedIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
-    // 處理滑鼠離開容器時的殘留
-    const handleContainerDragLeave = (e: React.DragEvent) => {
-      // 只有滑鼠真正離開 playerContainer (而不是進入其中的 PlayerCell) 才重置
-      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-        setDragOverIndex(null);
-      }
-    };
+  const onDropOnBackground = (e: React.DragEvent) => {
+    const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
+    if (fromLineupIndex !== "") {
+      removeFromLineup(parseInt(fromLineupIndex));
+    }
+    setDragOverIndex(null);
+    setDraggedIndex(null);
+  };
 
-    useEffect(() => {
-      const handleCloseMenu = () => setContextMenu(null);
-      window.addEventListener("click", handleCloseMenu);
-      return () => window.removeEventListener("click", handleCloseMenu);
-    }, []);
+  const onDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  };
 
-    const [pixelLayout, setPixelLayout] = useState({
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-    });
-
-    useEffect(() => {
-      if (contextMenu) {
-        document.body.style.overflow = "hidden";
-        requestAnimationFrame(() => menuRef.current?.focus());
-        return () => {
-          document.body.style.overflow = "";
-        };
-      }
-    }, [contextMenu]);
-
-    const syncPixelsFromPercent = useCallback(() => {
-      if (containerRef.current) {
-        const { offsetWidth: cw, offsetHeight: ch } = containerRef.current;
-        if (cw > 0 && ch > 0) {
-          setPixelLayout({
-            x: (lineupLayout.x / 100) * cw,
-            y: (lineupLayout.y / 100) * ch,
-            width: (lineupLayout.w / 100) * cw,
-            height: (lineupLayout.h / 100) * ch,
-          });
-        }
-      }
-    }, [lineupLayout]);
-
-    useEffect(() => {
-      if (!containerRef.current) return;
-
-      // 建立監聽器：當容器大小變動，或是 lineupLayout 變動時，立刻同步
-      const observer = new ResizeObserver(() => {
-        syncPixelsFromPercent();
-      });
-
-      observer.observe(containerRef.current);
-
-      // 初始同步一次
-      syncPixelsFromPercent();
-
-      return () => observer.disconnect();
-    }, [syncPixelsFromPercent]); // 當 lineupLayout 改變時，這裡也會重新觸發
-
-    const updatePanelValues = (x: number, y: number, w: number, h: number) => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
-        if (containerRef.current) {
-          const { offsetWidth: cw, offsetHeight: ch } = containerRef.current;
-          if (cw > 0 && ch > 0) {
-            setLineupLayout({
-              x: Number(((x / cw) * 100).toFixed(2)),
-              y: Number(((y / ch) * 100).toFixed(2)),
-              w: Number(((w / cw) * 100).toFixed(2)),
-              h: Number(((h / ch) * 100).toFixed(2)),
-            });
-          }
-        }
-        rafRef.current = null;
-      });
-    };
-
-    useImperativeHandle(ref, () => ({
-      exportLineupImage: async (targetWidth: number) => {
-        if (!lineupContentRef.current) return null;
-        const contentNode = lineupContentRef.current;
-        const currentWidth = contentNode.offsetWidth;
-        const calculatedScale = targetWidth / currentWidth;
-
-        const options = {
-          scale: calculatedScale,
-          backgroundColor: null,
-          useCORS: true,
-          logging: false,
-          ignoreElements: (el: Element) =>
-            el.classList.contains("rnd-dev-active"),
-        };
-
+  const onDropOnGrid = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedIndex !== null) {
+      movePlayer(draggedIndex, toIndex);
+    } else {
+      const benchPlayerData = e.dataTransfer.getData("player");
+      if (benchPlayerData) {
         try {
-          const canvas = await html2canvas(contentNode as HTMLElement, options);
-          return canvas.toDataURL("image/png", 1.0);
-        } catch (error) {
-          console.error("Export failed:", error);
-          return null;
-        }
-      },
-    }));
+          const player = JSON.parse(benchPlayerData);
+          assignPlayerToSlot(player, toIndex);
+        } catch (error) { console.error("Parse failed", error); }
+      }
+    }
+    setDragOverIndex(null);
+    setDraggedIndex(null);
+  };
 
-    return (
-      <div
-        className="lineupContainer"
-        ref={containerRef}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={onDropOnBackground}
-      >
-        <div className="lineupContent" ref={lineupContentRef}>
-          <div className="backgroundLayer">
-            <img src={currentBackground} className="background" alt="background" />
-          </div>
+  const handleContainerDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverIndex(null);
+  };
 
-          <Rnd
-            className={isLineupRndActive ? "rnd-dev-active" : "rnd-dev-hidden"}
-            size={{ width: pixelLayout.width, height: pixelLayout.height }}
-            position={{ x: pixelLayout.x, y: pixelLayout.y }}
-            disableDragging={!isLineupRndActive}
-            enableResizing={isLineupRndActive}
-            bounds="parent"
-            onDrag={(e, d) => {
-              setPixelLayout((prev) => ({ ...prev, x: d.x, y: d.y }));
-              updatePanelValues(
-                d.x,
-                d.y,
-                pixelLayout.width,
-                pixelLayout.height,
-              );
-            }}
-            onResize={(e, dir, ref, delta, pos) => {
-              const newW = ref.offsetWidth;
-              const newH = ref.offsetHeight;
-              setPixelLayout({ width: newW, height: newH, ...pos });
-              updatePanelValues(pos.x, pos.y, newW, newH);
-            }}
-            onDragStop={() => {
-              if (rafRef.current) cancelAnimationFrame(rafRef.current);
-            }}
-            onResizeStop={() => {
-              if (rafRef.current) cancelAnimationFrame(rafRef.current);
-            }}
-          >
-            <div
-              className="playerContainer"
-              onDragLeave={handleContainerDragLeave}
-              style={
-                {
-                  gridTemplateColumns: `repeat(${teamsPerRow}, 1fr)`,
-                  columnGap: `${columnGap}%`,
-                  rowGap: `${rowGap}%`,
-                  "--cell-scale": `${playerCellSize / 100}`,
-                } as React.CSSProperties
-              }
-            >
-              {lineupPlayers.map((player, index) => (
-                <div
-                  key={index}
-                  className={`gridItemContainer ${dragOverIndex === index ? "drag-over" : ""}`}
-                  draggable={!!player}
-                  onDragStart={(e) => onDragStart(e, index)}
-                  onDragEnd={onDragEnd}
-                  onDragOver={(e) => onDragOver(e, index)}
-                  onDrop={(e) => onDropOnGrid(e, index)}
-                  style={{
-                    transform: `scale(var(--cell-scale))`,
-                    aspectRatio: playerCellAspectRatio,
-                    // 只有當 dragOver 且不是正在拖拽自己的那一格才顯示 outline
-                  }}
-                >
-                  <div
-                    className="gridItem"
-                    onContextMenu={(e) => handleContextMenu(e, index)}
-                  >
-                    {/* <PlayerCell player={player} /> */}
-                    <PlayerCellV2 player={player} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Rnd>
+  useEffect(() => {
+    const handleCloseMenu = () => setContextMenu(null);
+    window.addEventListener("click", handleCloseMenu);
+    return () => window.removeEventListener("click", handleCloseMenu);
+  }, []);
+
+  // ----------------------------------------------------------------
+  // 核心改動：直接同步像素數據
+  // ----------------------------------------------------------------
+
+  // 當 Rnd 停止拖拽或縮放時，直接將像素值存入 Context
+  const updateLayoutPixels = (x: number, y: number, w: number, h: number) => {
+    setLineupLayout({ x, y, w, h });
+  };
+
+  useImperativeHandle(ref, () => ({
+    exportLineupImage: async (targetWidth: number) => {
+      if (!lineupContentRef.current) return null;
+      const contentNode = lineupContentRef.current;
+      const currentWidth = contentNode.offsetWidth;
+      const calculatedScale = targetWidth / currentWidth;
+
+      const options = {
+        scale: calculatedScale,
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
+        ignoreElements: (el: Element) => el.classList.contains("rnd-dev-active"),
+      };
+
+      try {
+        const canvas = await html2canvas(contentNode as HTMLElement, options);
+        return canvas.toDataURL("image/png", 1.0);
+      } catch (error) {
+        console.error("Export failed:", error);
+        return null;
+      }
+    },
+  }));
+
+  return (
+    <div
+      className="lineupContainer"
+      ref={containerRef}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDropOnBackground}
+    >
+      <div className="lineupContent" ref={lineupContentRef}>
+        <div className="backgroundLayer">
+          <img src={currentBackground} className="background" alt="background" />
         </div>
 
-        {contextMenu && (
+        <Rnd
+          className={isLineupRndActive ? "rnd-dev-active" : "rnd-dev-hidden"}
+          // 直接使用 lineupLayout 的像素值
+          size={{ width: lineupLayout.w, height: lineupLayout.h }}
+          position={{ x: lineupLayout.x, y: lineupLayout.y }}
+          disableDragging={!isLineupRndActive}
+          enableResizing={isLineupRndActive}
+          bounds="parent"
+          onDragStop={(e, d) => {
+            updateLayoutPixels(d.x, d.y, lineupLayout.w, lineupLayout.h);
+          }}
+          onResizeStop={(e, dir, ref, delta, pos) => {
+            updateLayoutPixels(pos.x, pos.y, ref.offsetWidth, ref.offsetHeight);
+          }}
+        >
           <div
-            className="lineupPopMenu"
-            ref={menuRef}
-            tabIndex={-1}
-            style={{ top: contextMenu.y, left: contextMenu.x }}
+            className="playerContainer"
+            onDragLeave={handleContainerDragLeave}
+            style={
+              {
+                display: "grid",
+                gridTemplateColumns: `repeat(${teamsPerRow}, 1fr)`,
+                // 改為像素單位 (px)
+                columnGap: `${columnGap}px`,
+                rowGap: `${rowGap}px`,
+                // 卡片縮放現在基於原始像素大小的比例，或者直接鎖定
+                // "--cell-scale": `${playerCellSize / 100}`, 
+                // "--card-width": `${playerCellSize}`,
+              } as React.CSSProperties
+            }
           >
-            <div
-              className="removeButton"
-              onClick={() => {
-                removeFromLineup(contextMenu.index);
-                setContextMenu(null);
-              }}
-            >
-              Remove Player
-            </div>
+            {lineupPlayers.map((player, index) => (
+              <div
+                key={index}
+                className={`gridItemContainer ${dragOverIndex === index ? "drag-over" : ""}`}
+                draggable={!!player}
+                onDragStart={(e) => onDragStart(e, index)}
+                onDragEnd={onDragEnd}
+                onDragOver={(e) => onDragOver(e, index)}
+                onDrop={(e) => onDropOnGrid(e, index)}
+                style={{
+                  // 如果 playerCellSize 現在是像素值(如 120px)，這裡要相應調整
+                  // 假設你的邏輯是 transform: scale，則維持比例計算
+                  // transform: `scale(${playerCellSize / 100})`,
+                  width: playerCellSize,
+                  aspectRatio: playerCellAspectRatio,
+                }}
+              >
+                <div
+                  className="gridItem"
+                  onContextMenu={(e) => handleContextMenu(e, index)}
+                >
+                  <PlayerCellV2 player={player} />
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+        </Rnd>
       </div>
-    );
-  },
-);
+
+      {contextMenu && (
+        <div
+          className="lineupPopMenu"
+          ref={menuRef}
+          tabIndex={-1}
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <div
+            className="removeButton"
+            onClick={() => {
+              removeFromLineup(contextMenu.index);
+              setContextMenu(null);
+            }}
+          >
+            Remove Player
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export default Lineup;

@@ -1,10 +1,10 @@
 import { useEditor } from "../context/Editor";
 import { useTeam } from "../context/Team";
+
 const RESOLUTIONS = {
   "1K": 1920,
   "2K": 2560,
   "4K": 3840,
-  // "8K": 7680
 };
 
 function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
@@ -18,7 +18,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     columnGap,
     setColumnGap,
     rowGap,
-    // setRowGap,
+    setRowGap,
     lineupLayout,
     setLineupLayout,
     resetToDefault,
@@ -37,19 +37,16 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGroupId = e.target.value;
     setCurrentGroupId(newGroupId);
-    clearTeam(); // 確保切換時舊組別的球員不會留在畫面上
+    clearTeam();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
-
-    // 如果是空的，先不處理（允許使用者刪除文字）
     if (rawValue === "") return;
 
     let numValue = parseFloat(rawValue);
-
-    // 限制範圍 0 ~ 150
-    if (numValue > 150) numValue = 150;
+    // 像素模式下，限制可以放寬（例如最大 1000px）
+    if (numValue > 1000) numValue = 1000;
     if (numValue < 0) numValue = 0;
 
     if (!isNaN(numValue)) {
@@ -60,23 +57,21 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
   const handleLayoutChange = (key: string, value: string) => {
     let numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      // 限制在 0-100 之間
-      numValue = Math.min(100, Math.max(0, numValue));
+      // 像素模式不再強制限制在 100 內，改為合理的大數值
+      numValue = Math.max(0, numValue);
       setLineupLayout({ ...lineupLayout, [key]: numValue });
     }
   };
 
-  // 當失去焦點 (Blur) 時，強制執行一次狀態同步，確保數值結構正確
   const handleBlur = () => {
-    setPlayerCellSize(Number(playerCellSize.toFixed(1)));
+    setPlayerCellSize(Number(playerCellSize.toFixed(0))); // 像素通常取整數
   };
 
   const handleGapChange =
     (setter: (val: number) => void) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = parseFloat(e.target.value);
-      if (!isNaN(val) && val >= 0 && val <= 20) {
-        // 間距通常不會超過 20%
+      if (!isNaN(val) && val >= 0) {
         setter(val);
       }
     };
@@ -102,7 +97,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "team.json";
+    link.download = "team_config.json";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -115,6 +110,8 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
       <div className="toolPanel">
         <section className="leftPanel">
           <h3>排版設定</h3>
+          
+          {/* 拖曳模式 */}
           <div className="editorOption lineupRndTool">
             <div className="editorControlItem">
               <span className="labelText">拖曳編輯模式</span>
@@ -127,222 +124,216 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   />
                   <span className="slider round"></span>
                 </label>
-                <span className="statusText">
-                  {isLineupRndActive ? "ON" : "OFF"}
-                </span>
+                <span className="statusText">{isLineupRndActive ? "ON" : "OFF"}</span>
               </div>
             </div>
           </div>
+
+          {/* 隊伍數量 */}
           <div className="editorOption TeamNumTool">
             <div className="editorControlItem">
-              <span>隊伍數量</span>
+              <span>每列隊伍數</span>
               <div className="inputGroup">
                 <input
-                  id="teamNumInput"
                   type="number"
                   min="1"
-                  max="8"
+                  max="20"
                   value={teamsPerRow}
-                  onChange={(e) =>
-                    setTeamsPerRow(Math.max(1, parseInt(e.target.value) || 1))
-                  }
+                  onChange={(e) => setTeamsPerRow(Math.max(1, parseInt(e.target.value) || 1))}
                   className="numberInput"
                 />
                 <span className="unit">隊</span>
               </div>
             </div>
           </div>
+
+          {/* 人數設定 */}
           <div className="editorOption teamPlayersNumTool">
             <div className="editorControlItem">
               <div className="twoLineContainer">
                 <div className="toolGroup">
-                  <label>手動設定人數</label>
+                  <label>手動人數</label>
                   <div className="inputGroup">
                     <label className="switch">
                       <input
                         type="checkbox"
                         checked={isManual}
-                        onChange={(e) =>
-                          setTeamSizeMode(e.target.checked ? "manual" : "auto")
-                        }
+                        onChange={(e) => setTeamSizeMode(e.target.checked ? "manual" : "auto")}
                       />
                       <span className="slider round"></span>
                     </label>
-                    <span className="statusText">
-                      {isManual ? "ON" : "OFF"}
-                    </span>
                   </div>
                 </div>
-                <div className={`toolGroup ${isManual ? "": "disabled"}`}>
-                  <label>設置隊伍人數</label>
+                <div className={`toolGroup ${isManual ? "" : "disabled"}`}>
+                  <label>每隊人數</label>
                   <div className="inputGroup">
                     <input
                       type="number"
                       value={manualTeamMemberSize}
-                      onChange={(e) =>
-                        setManualTeamMemberSize(parseInt(e.target.value) || 0)
-                      }
+                      onChange={(e) => setManualTeamMemberSize(parseInt(e.target.value) || 0)}
                       className="numberInput"
                     />
-                    <span className="unit">人/隊</span>
+                    <span className="unit">人</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* 邊距 (x, y) */}
           <div className="editorOption editorControlGroup">
             <div className="editorControlItem">
-              <span>左邊距 (x)</span>
+              <span>左座標 (x)</span>
               <div className="inputGroup">
                 <input
                   type="number"
-                  step="0.1"
-                  value={lineupLayout.x.toFixed(1)}
+                  value={lineupLayout.x.toFixed(0)}
                   onChange={(e) => handleLayoutChange("x", e.target.value)}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">px</span>
               </div>
             </div>
             <div className="editorControlItem">
-              <span>上邊距 (y)</span>
+              <span>上座標 (y)</span>
               <div className="inputGroup">
                 <input
                   type="number"
-                  step="0.1"
-                  value={lineupLayout.y.toFixed(1)}
+                  value={lineupLayout.y.toFixed(0)}
                   onChange={(e) => handleLayoutChange("y", e.target.value)}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">px</span>
               </div>
             </div>
           </div>
 
-          {/* RND 尺寸控制 (w, h) */}
+          {/* 區域大小 (w, h) */}
           <div className="editorOption editorControlGroup">
             <div className="editorControlItem">
-              <span>寬度 (w)</span>
+              <span>總寬度 (w)</span>
               <div className="inputGroup">
                 <input
                   type="number"
-                  step="0.1"
-                  value={lineupLayout.w.toFixed(1)}
+                  value={lineupLayout.w.toFixed(0)}
                   onChange={(e) => handleLayoutChange("w", e.target.value)}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">px</span>
               </div>
             </div>
             <div className="editorControlItem">
-              <span>高度 (h)</span>
+              <span>總高度 (h)</span>
               <div className="inputGroup">
                 <input
                   type="number"
-                  step="0.1"
-                  value={lineupLayout.h.toFixed(1)}
+                  value={lineupLayout.h.toFixed(0)}
                   onChange={(e) => handleLayoutChange("h", e.target.value)}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">px</span>
               </div>
             </div>
           </div>
         </section>
+
         <section className="centerPanel">
           <h3>選手卡片設定</h3>
+          
+          {/* 寬高比 - 保持數值，不標示 px/ % */}
           <div className="editorOption playerplayerCellAspectRatioTool">
             <div className="editorControlItem">
-              <span>選手卡片寬高比</span>
+              <span>卡片寬高比</span>
               <div className="inputGroup">
                 <input
-                  id="playerplayerCellAspectRatioSlider"
                   type="range"
                   min="0.1"
-                  max="10.0"
-                  step="0.1"
-                  value={playerCellAspectRatio.toFixed(2)}
-                  onChange={(e) =>
-                    setPlayerCellAspectRatio(parseFloat(e.target.value))
-                  }
+                  max="5.0"
+                  step={0.01}
+                  value={playerCellAspectRatio}
+                  onChange={(e) => setPlayerCellAspectRatio(parseFloat(e.target.value))}
                   className="numberSlider"
                 />
-                {/* 數字輸入框：鍵盤精確輸入 */}
                 <input
-                  id="playerplayerCellAspectRatioInput"
+                  step={0.01}
                   type="number"
-                  min="0.1"
-                  max="10.0"
-                  step="0.1"
-                  value={playerCellAspectRatio.toFixed(2)}
-                  onChange={(e) =>
-                    setPlayerCellAspectRatio(parseFloat(e.target.value))
-                  }
-                  onBlur={handleBlur}
+                  value={playerCellAspectRatio}
+                  onChange={(e) => setPlayerCellAspectRatio(parseFloat(e.target.value))}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">ratio</span>
               </div>
             </div>
           </div>
+
+          {/* 卡片大小 */}
           <div className="editorOption playerCellSizeTool">
             <div className="editorControlItem">
-              <span>選手卡片大小</span>
+              <span>卡片尺寸</span>
               <div className="inputGroup">
                 <input
-                  id="playerCellSizeSlider"
                   type="range"
-                  min="50"
-                  max="150"
-                  step="0.1"
-                  value={playerCellSize.toFixed(1)}
+                  min="20"
+                  max="500"
+                  step="1"
+                  value={playerCellSize}
                   onChange={handleChange}
-                  onBlur={handleBlur}
                   className="numberSlider"
                 />
-
-                {/* 數字輸入框：鍵盤精確輸入 */}
                 <input
-                  id="playerCellSizeInput"
                   type="number"
-                  min="50"
-                  max="150"
-                  step="0.1"
-                  value={playerCellSize.toFixed(1)}
+                  value={playerCellSize.toFixed(0)}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">px</span>
               </div>
             </div>
           </div>
 
+          {/* 間距 */}
           <div className="editorOption GridGapTool">
-            {/* Column Gap 調整 */}
             <div className="editorControlItem">
-              <span>水平間距</span>
+              <span>水平格子間距</span>
               <div className="inputGroup">
                 <input
-                  id="gridColumeGapSlider"
                   type="range"
                   min="0"
-                  max="20"
-                  step="0.1"
+                  max="100"
+                  step="1"
                   value={columnGap}
                   onChange={handleGapChange(setColumnGap)}
                   className="numberSlider"
                 />
                 <input
-                  id="gridColumeGapInput"
                   type="number"
-                  step="0.1"
-                  value={columnGap.toFixed(1)}
+                  value={columnGap.toFixed(0)}
                   onChange={handleGapChange(setColumnGap)}
                   className="numberInput"
                 />
-                <span className="unit">%</span>
+                <span className="unit">px</span>
+              </div>
+            </div>
+            <div className="editorControlItem">
+              <span>垂直格子間距</span>
+              <div className="inputGroup">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={rowGap}
+                  onChange={handleGapChange(setRowGap)}
+                  className="numberSlider"
+                />
+                <input
+                  type="number"
+                  value={rowGap.toFixed(0)}
+                  onChange={handleGapChange(setRowGap)}
+                  className="numberInput"
+                />
+                <span className="unit">px</span>
               </div>
             </div>
           </div>
@@ -352,7 +343,6 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
             <div className="editorControlItem">
               <span>當前組別</span>
               <select
-                id="groupSelect"
                 value={currentGroupId}
                 onChange={handleGroupChange}
                 className="groupSelect"
@@ -360,7 +350,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                 {availableGroups.length > 0 ? (
                   availableGroups.map((group) => (
                     <option key={group} value={group}>
-                      {group.replace(/_/g, " ")} {/* 將底線換成空格比較美觀 */}
+                      {group.replace(/_/g, " ")}
                     </option>
                   ))
                 ) : (
@@ -369,66 +359,30 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
               </select>
             </div>
           </div>
-
-          {/* <div className="editorOption GridGapTool">
-            <div className="editorControlItem">
-              <span>垂直間距</span>
-              <span className="inputGroup">
-                <input
-                  id="gridRowGapSlider"
-                  type="range"
-                  min="0"
-                  max="20"
-                  step="0.1"
-                  value={rowGap}
-                  onChange={handleGapChange(setRowGap)}
-                />
-                <input
-                  id="gridRowGapInput"
-                  type="number"
-                  step="0.1"
-                  value={rowGap.toFixed(1)}
-                  onChange={handleGapChange(setRowGap)}
-                  className="numberInput"
-                />
-                <span className="unit">%</span>
-              </span>
-            </div>
-          </div> */}
         </section>
+
         <section className="rightPanel">
           <h3 className="exportButtonsTitle">輸出截圖</h3>
           <div className="editorOption downloadImage">
-            <div className="editorControlItem">
-              <div className="actionButtons">
-                {Object.entries(RESOLUTIONS).map(([label, width]) => (
-                  <button
-                    key={label}
-                    onClick={() => onExport(width)}
-                    className={`exportButton button${label}`}
-                  >
-                    Export {label}
-                  </button>
-                ))}
-              </div>
+            <div className="actionButtons">
+              {Object.entries(RESOLUTIONS).map(([label, width]) => (
+                <button
+                  key={label}
+                  onClick={() => onExport(width)}
+                  className={`exportButton button${label}`}
+                >
+                  Export {label}
+                </button>
+              ))}
             </div>
           </div>
+          
           <h3>介面操作</h3>
           <div className="editorOption stateActions">
-            <div className="editorControlItem">
-              <div className="actionButtons">
-                {/* 重置按鈕 */}
-                <button onClick={resetToDefault} className="resetButton">
-                  重置排版
-                </button>
-                {/* 下載按鈕 */}
-                <button onClick={downloadConfig} className="downloadButton">
-                  下載排版設定檔
-                </button>
-                <button onClick={clearTeam} className="clearLineupsButton">
-                  重置隊伍版面
-                </button>
-              </div>
+            <div className="actionButtons">
+              <button onClick={resetToDefault} className="resetButton">重置排版</button>
+              <button onClick={downloadConfig} className="downloadButton">下載 JSON</button>
+              <button onClick={clearTeam} className="clearLineupsButton">清空版面</button>
             </div>
           </div>
         </section>
