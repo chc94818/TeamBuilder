@@ -65,3 +65,7 @@ img {
 #spacer {
   height: 48px;
 }
+
+body > div:last-child img {
+  display: inline-block;
+}

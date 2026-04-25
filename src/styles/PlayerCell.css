@@ -22,3 +22,47 @@
     }
   }
 }
+
+.playerCellV2 {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+
+  .playerImg {
+    aspect-ratio: 1;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
+    justify-content: flex-end;
+
+    img {
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .playerName {
+    flex-grow: 1;
+    height: 100%;
+    font-size: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap;
+
+  }
+}
+
+.benchPlayerCellContainer {
+  .playerCellV2 {
+    background-color: #e6e0e3;
+    border: 2px solid #b3dfc2;
+  }
+}

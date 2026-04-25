@@ -1,6 +1,8 @@
 import { useState } from "react";
-import PlayerCell from "./PlayerCell";
+// import PlayerCell from "./PlayerCell";
+import PlayerCellV2 from "./PlayerCellV2";
 import { useTeam, type Player } from "../context/Team";
+import { useEditor } from "../context/Editor";
 
 function Bench() {
   const {
@@ -10,6 +12,7 @@ function Bench() {
     removeFromLineup,
     assignPlayerToSlot,
   } = useTeam();
+  const { playerCellAspectRatio } = useEditor();
 
   // 1. 新增狀態：記錄目前滑鼠經過哪一個板凳球員
   const [benchDragOverId, setBenchDragOverId] = useState<string | null>(null);
@@ -81,8 +84,12 @@ function Bench() {
               }}
               onDragLeave={() => setBenchDragOverId(null)}
               onDrop={(e) => onDropOnBenchItem(e, player)}
+              style={{
+                aspectRatio: playerCellAspectRatio,
+              }}
             >
-              <PlayerCell player={player} />
+              {/* <PlayerCell player={player} /> */}
+              <PlayerCellV2 player={player} />
             </div>
           );
         })}

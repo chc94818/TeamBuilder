@@ -7,7 +7,8 @@ import React, {
   useImperativeHandle,
 } from "react";
 import { Rnd } from "react-rnd";
-import PlayerCell from "./PlayerCell";
+// import PlayerCell from "./PlayerCell";
+import PlayerCellV2 from "./PlayerCellV2";
 import { useEditor } from "../context/Editor";
 import { useTeam } from "../context/Team";
 import html2canvas from "html2canvas";
@@ -303,7 +304,8 @@ const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
                     className="gridItem"
                     onContextMenu={(e) => handleContextMenu(e, index)}
                   >
-                    <PlayerCell player={player} />
+                    {/* <PlayerCell player={player} /> */}
+                    <PlayerCellV2 player={player} />
                   </div>
                 </div>
               ))}
