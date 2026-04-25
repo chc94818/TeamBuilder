@@ -16,7 +16,7 @@
 .benchPlayerCellContainer,
 .gridItemContainer {
   &.drag-over {
-    .playerCell {
+    .playerCell, .playerCellV2 {
       outline: dashed 2px #0affff;
       outline-offset: 1px;
     }
@@ -56,7 +56,7 @@
     justify-content: center;
     align-items: center;
     white-space: nowrap;
-
+    font-family: NotoSansTC;
   }
 }
 
