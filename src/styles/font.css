@@ -22,3 +22,13 @@
   /* 關鍵：解決閃爍與匯出計算問題 */
   font-display: block; 
 }
+
+@font-face {
+  font-family: 'NotoSansTC';
+  src: url('../assets/fonts/NotoSansTC-NotoSansTC-ExtraBold.ttf') format('truetype');
+  font-weight: bolder;
+  font-style: light;
+  /* 關鍵：解決閃爍與匯出計算問題 */
+  font-display: block; 
+}
+

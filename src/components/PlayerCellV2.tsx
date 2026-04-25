@@ -20,7 +20,7 @@ function PlayerCell({ player }: PlayerProps) {
   const { name, url } = player;
 
   const getNameClass = (name: string): string => {
-    const parts = name.split(/(?=[&(\(])/g);
+    const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
 
     const maxLineLength = Math.max(...parts.map((part) => part.length));
     if (maxLineLength <= NAME_LENGTH_MAP["SHORT"]) return "large";
@@ -32,7 +32,7 @@ function PlayerCell({ player }: PlayerProps) {
   const renderName = (name: string) => {
     // 使用正向預查 (?=[&(\()])
     // 這表示：在 & 或 ( 之前進行切割，但保留符號在後面的字串中
-    const parts = name.split(/(?=[&(\(])/g);
+    const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
 
     return parts.map((part, index) => (
       <span key={index}>
