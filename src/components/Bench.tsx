@@ -44,7 +44,7 @@ function Bench() {
 
   return (
     <div
-      className={`benchContainer`}
+      className={`benchContainer playerCellBackgroundAnchor`}
       onDrop={(e) => {
         e.preventDefault();
         const fromLineupIndex = e.dataTransfer.getData("fromLineupIndex");
@@ -63,7 +63,7 @@ function Bench() {
           return (
             <div
               key={player.id}
-              className={`benchPlayerCellContainer ${isUsed ? "disabled" : ""} ${isCurrentTarget ? "drag-over" : ""}`}
+              className={`benchPlayerCellContainer ${isUsed ? "disabled" : ""} ${isCurrentTarget ? "dragOver" : ""}`}
               onClick={() => !isUsed && addToLineup(player)}
               draggable={!isUsed}
               onDragStart={(e) => onBenchDragStart(e, player)}

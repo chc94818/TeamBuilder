@@ -231,7 +231,7 @@ const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
           }}
         >
           <div
-            className="playerContainer"
+            className="playerContainer playerCellBackgroundAnchor"
             onDragLeave={handleContainerDragLeave}
             style={
               {
@@ -249,7 +249,7 @@ const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
             {lineupPlayers.map((player, index) => (
               <div
                 key={index}
-                className={`gridItemContainer ${dragOverIndex === index ? "drag-over" : ""}`}
+                className={`gridItemContainer ${dragOverIndex === index ? "dragOver" : ""}`}
                 draggable={!!player}
                 onDragStart={(e) => onDragStart(e, index)}
                 onDragEnd={onDragEnd}

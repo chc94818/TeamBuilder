@@ -24,7 +24,7 @@ function PlayerCell({ player }: PlayerProps) {
 
       // 找到共同的父容器 (例如 grid container)
       // 假設父容器的 class 是 .player-grid-container
-      const parent = cellContainerRef.current.closest(".playerContainer");
+      const parent = cellContainerRef.current.closest(".playerCellBackgroundAnchor");
       if (!parent) return;
 
       const parentRect = parent.getBoundingClientRect();

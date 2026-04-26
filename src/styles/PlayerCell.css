@@ -32,7 +32,7 @@
 /* 拖曳經過時的效果 */
 .benchPlayerCellContainer,
 .gridItemContainer {
-  &.drag-over {
+  &.dragOver {
     .playerCell,
     .playerCellV2 {
       outline: dashed 2px #0affff;
@@ -52,10 +52,11 @@
 
   display: flex;
   align-items: center;
-  border: 1.5px solid rgba(150, 90, 150, 0.8);
+  border: 2px solid transparent;
+  z-index: 2;
 
-  background-color: rgba(224, 230, 227, 0.8);
-  box-shadow: 0 0 1px 2px rgba(150, 90, 150, 0.8);
+  background-color: rgba(224, 230, 227, 0.9);
+  box-shadow: 0 0 1px 2px rgba(150, 90, 150, 0.9);
   background-clip: content-box;
 
   .playerImg {
@@ -77,8 +78,7 @@
 .playerCellContainer::after {
   content: "";
   position: absolute;
-  /* 完美的 1:1 覆蓋 */
-  inset: -0.5px;
+  inset: 0;
 
   /* 直接使用邊框，不再需要 padding 模擬 */
   border: 2px solid transparent;
@@ -156,7 +156,8 @@
 
 .benchPlayerCellContainer {
   .playerCellV2 {
-    background-color: rgba(224, 230, 227, 0.8);
+    background-color: rgba(253, 254, 255, 0.9);
+    box-shadow: 0 0 1px 2px rgba(219, 227, 245, 0.3);
     border: 2px solid #b3dfc2;
   }
 }
