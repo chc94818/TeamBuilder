@@ -26,6 +26,7 @@
 }
 
 .playerCell.empty {
+  cursor: auto;
   background-color: rgba(16, 95, 104, 0.3);
 }
 
