@@ -246,31 +246,35 @@ const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
               } as React.CSSProperties
             }
           >
-            {lineupPlayers.map((player, index) => (
-              <div
-                key={index}
-                className={`gridItemContainer ${dragOverIndex === index ? "dragOver" : ""}`}
-                draggable={!!player}
-                onDragStart={(e) => onDragStart(e, index)}
-                onDragEnd={onDragEnd}
-                onDragOver={(e) => onDragOver(e, index)}
-                onDrop={(e) => onDropOnGrid(e, index)}
-                style={{
-                  // 如果 playerCellSize 現在是像素值(如 120px)，這裡要相應調整
-                  // 假設你的邏輯是 transform: scale，則維持比例計算
-                  // transform: `scale(${playerCellSize / 100})`,
-                  width: playerCellSize,
-                  aspectRatio: playerCellAspectRatio,
-                }}
-              >
+            {lineupPlayers.map((player, index) => {
+              const rowIndex = Math.floor(index / teamsPerRow);
+              const colIndex = index % teamsPerRow;
+              return (
                 <div
-                  className="gridItem"
-                  onContextMenu={(e) => handleContextMenu(e, index)}
+                  key={index}
+                  className={`gridItemContainer row-${rowIndex} col-${colIndex} ${dragOverIndex === index ? "dragOver" : ""}`}
+                  draggable={!!player}
+                  onDragStart={(e) => onDragStart(e, index)}
+                  onDragEnd={onDragEnd}
+                  onDragOver={(e) => onDragOver(e, index)}
+                  onDrop={(e) => onDropOnGrid(e, index)}
+                  style={{
+                    // 如果 playerCellSize 現在是像素值(如 120px)，這裡要相應調整
+                    // 假設你的邏輯是 transform: scale，則維持比例計算
+                    // transform: `scale(${playerCellSize / 100})`,
+                    width: playerCellSize,
+                    aspectRatio: playerCellAspectRatio,
+                  }}
                 >
-                  <PlayerCellV2 player={player} />
+                  <div
+                    className="gridItem"
+                    onContextMenu={(e) => handleContextMenu(e, index)}
+                  >
+                    <PlayerCellV2 player={player} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Rnd>
       </div>
