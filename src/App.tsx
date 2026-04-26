@@ -12,11 +12,12 @@ function App() {
 
   const handleExportImage = async (targetWidth: number) => {
     if (lineupRef.current) {
-      const base64 = await lineupRef.current.exportLineupImage(targetWidth);
+      const {base64, filename} = await lineupRef.current.exportLineupImage(targetWidth) || {};
       if (base64) {
         const link = document.createElement("a");
         link.href = base64;
-        link.download = `lineup_${targetWidth}px.png`;
+
+        link.download = filename ? `${filename}_${targetWidth}px.png` : `lineup_${targetWidth}px.png`;
         link.click();
       }
     }

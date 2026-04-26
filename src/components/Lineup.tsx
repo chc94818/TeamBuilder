@@ -11,8 +11,14 @@ import { useEditor } from "../context/Editor";
 import { useTeam } from "../context/Team";
 import html2canvas from "html2canvas";
 
+
+interface ExportResult {
+  base64: string;
+  filename: string;
+}
+
 export interface LineupBoardHandle {
-  exportLineupImage: (targetWidth: number) => Promise<string | null>;
+  exportLineupImage: (targetWidth: number) => Promise<ExportResult | null>;
 }
 
 const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
@@ -25,6 +31,7 @@ const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
     lineupLayout,
     setLineupLayout,
     playerCellAspectRatio,
+    currentGroupId,
   } = useEditor();
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -188,10 +195,9 @@ const Lineup = forwardRef<LineupBoardHandle, object>((_props, ref) => {
             targetWidth,
             targetHeight, // 填滿目標
           );
-
-          return finalCanvas.toDataURL("image/png", 1.0);
+          return { base64: finalCanvas.toDataURL("image/png", 1.0), filename: currentGroupId};
         }
-        return rawCanvas.toDataURL("image/png", 1.0);
+        return { base64: rawCanvas.toDataURL("image/png", 1.0), filename: currentGroupId};
       } catch (error) {
         console.error("Export failed:", error);
         return null;

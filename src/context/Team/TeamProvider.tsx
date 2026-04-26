@@ -26,7 +26,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({
   const groupDataMap = useMemo(() => {
     const map: Record<string, { background: string; players: Player[] }> = {};
 
-    Object.entries(allAssets).forEach(([path, mod]: [string, AssetModule]) => {
+    (Object.entries(allAssets)as [string, AssetModule][]).forEach(([path, mod]: [string, AssetModule]) => {
       const parts = path.split("/");
       const groupName = parts[4];
       const subDir = parts[5];

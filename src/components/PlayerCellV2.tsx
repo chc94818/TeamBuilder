@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { StrokeText } from "./StrokeText";
 
 interface PlayerProps {
@@ -53,7 +53,7 @@ function PlayerCell({ player }: PlayerProps) {
   const { name, url } = player;
 
   const getNameClass = (name: string): string => {
-    const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
+    const parts = name.split(/(?=[&(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
     const maxLineLength = Math.max(...parts.map((part) => part.length));
     if (maxLineLength <= NAME_LENGTH_MAP["SHORT"]) return "large";
     if (maxLineLength <= NAME_LENGTH_MAP["MEDIUM"]) return "medium";
@@ -62,7 +62,7 @@ function PlayerCell({ player }: PlayerProps) {
   };
 
   const renderName = (name: string) => {
-    const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
+    const parts = name.split(/(?=[&(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
     return parts.map((part, index) => (
       <StrokeText key={index} text={part} />
     ));
