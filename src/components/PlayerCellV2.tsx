@@ -1,3 +1,5 @@
+import { StrokeText } from "./StrokeText";
+
 interface PlayerProps {
   player: {
     name: string;
@@ -35,10 +37,7 @@ function PlayerCell({ player }: PlayerProps) {
     const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
 
     return parts.map((part, index) => (
-      <span key={index}>
-        {part}
-        {index < parts.length - 1 && <br />}
-      </span>
+      <StrokeText key={index} text={part} />
     ));
   };
   const nameLengthClass = getNameClass(name);
