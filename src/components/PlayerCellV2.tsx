@@ -1,10 +1,11 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { StrokeText } from "./StrokeText";
 
 interface PlayerProps {
   player: {
     name: string;
     url: string;
-  } | null; // 允許傳入 null
+  } | null;
 }
 
 const NAME_LENGTH_MAP = {
@@ -14,44 +15,69 @@ const NAME_LENGTH_MAP = {
 };
 
 function PlayerCell({ player }: PlayerProps) {
+  const cellRef = useRef<HTMLDivElement>(null);
+
+  // 當視窗縮放或組件掛載時，計算與父容器的相對位置
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      console.log('cellRef.current', cellRef.current)
+      if (!cellRef.current) return;
+
+      // 找到共同的父容器 (例如 grid container)
+      // 假設父容器的 class 是 .player-grid-container
+      const parent = cellRef.current.closest(".playerContainer");
+      if (!parent) return;
+
+      const parentRect = parent.getBoundingClientRect();
+      const cellRect = cellRef.current.getBoundingClientRect();
+
+      // 計算偏移量
+      const offsetX = parentRect.left - cellRect.left;
+      const offsetY = parentRect.top - cellRect.top;
+
+      // 將變數注入 style
+      cellRef.current.style.setProperty("--offset-x", `${offsetX}px`);
+      cellRef.current.style.setProperty("--offset-y", `${offsetY}px`);
+      cellRef.current.style.setProperty("--parent-w", `${parentRect.width}px`);
+      cellRef.current.style.setProperty("--parent-h", `${parentRect.height}px`);
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, [player]); // 當玩家資料變更時重新計算
+
   if (!player) {
     return <div className="playerCell empty"></div>;
   }
 
-  // 如果有 player 資料，正常渲染
   const { name, url } = player;
 
   const getNameClass = (name: string): string => {
     const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
-
     const maxLineLength = Math.max(...parts.map((part) => part.length));
     if (maxLineLength <= NAME_LENGTH_MAP["SHORT"]) return "large";
     if (maxLineLength <= NAME_LENGTH_MAP["MEDIUM"]) return "medium";
     if (maxLineLength <= NAME_LENGTH_MAP["LONG"]) return "small";
-    return "MEDIUM"; // 最長的情況
+    return "medium"; 
   };
 
   const renderName = (name: string) => {
-    // 使用正向預查 (?=[&(\()])
-    // 這表示：在 & 或 ( 之前進行切割，但保留符號在後面的字串中
     const parts = name.split(/(?=[&(\(]|吃吃吃|茶泡飯|翟普瑞薩)/g);
-
     return parts.map((part, index) => (
       <StrokeText key={index} text={part} />
     ));
   };
+
   const nameLengthClass = getNameClass(name);
 
-  // const nameSplit = name.split('&');
   return (
-    <div className="playerCellV2">
+    <div className="playerCellV2" ref={cellRef}>
       <div className="playerImg">
         <img src={url} alt={name} />
       </div>
       <div className={`playerName ${nameLengthClass}`}>
         {renderName(name)}
-        {/* {nameSplit[0] && <span>{nameSplit[0]}</span>}
-        {nameSplit[1] && <span>{nameSplit[1]}</span>} */}
       </div>
     </div>
   );
