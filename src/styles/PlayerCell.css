@@ -125,15 +125,15 @@
     font-weight: bold;
 
     &.large {
-      font-size: 14px;
+      font-size: 16px;
     }
 
     &.medium {
-      font-size: 13px;
+      font-size: 16px;
     }
 
     &.small {
-      font-size: 12px;
+      font-size: 16px;
     }
   }
 
