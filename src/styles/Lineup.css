@@ -119,6 +119,18 @@
   height: 100% !important;
   box-sizing: border-box;
   align-content: space-between;
+  /* background-image:linear-gradient(
+      25deg,
+      #00fff5 0%,
+      #00fff7 30%,
+      #D7FFFF 45%,
+      #fffdfe 50%,
+      #D8D6FB 55%,
+      #296ee7 70%,
+      #286fe5 100%
+    ); */
+  
+    
 }
 
 .playerContainer {
@@ -152,14 +164,6 @@
       object-fit: cover;
     }
   }
-}
-
-/* 假設 PlayerCell 的最外層 class 是 .player-cell-wrapper */
-.playerCellContainer {
-  /* 使用傳入的百分比變數 */
-  width: var(--cell-width-percent);
-  /* 如果你不希望選手縮小到看不見，可以加一個最小值 */
-  min-width: 20px;
 }
 
 .lineupPopMenu {

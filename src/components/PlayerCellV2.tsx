@@ -15,31 +15,30 @@ const NAME_LENGTH_MAP = {
 };
 
 function PlayerCell({ player }: PlayerProps) {
-  const cellRef = useRef<HTMLDivElement>(null);
+  const cellContainerRef = useRef<HTMLDivElement>(null);
 
   // 當視窗縮放或組件掛載時，計算與父容器的相對位置
   useLayoutEffect(() => {
     const updatePosition = () => {
-      console.log('cellRef.current', cellRef.current)
-      if (!cellRef.current) return;
+      if (!cellContainerRef.current) return;
 
       // 找到共同的父容器 (例如 grid container)
       // 假設父容器的 class 是 .player-grid-container
-      const parent = cellRef.current.closest(".playerContainer");
+      const parent = cellContainerRef.current.closest(".playerContainer");
       if (!parent) return;
 
       const parentRect = parent.getBoundingClientRect();
-      const cellRect = cellRef.current.getBoundingClientRect();
+      const cellRect = cellContainerRef.current.getBoundingClientRect();
 
       // 計算偏移量
       const offsetX = parentRect.left - cellRect.left;
       const offsetY = parentRect.top - cellRect.top;
 
       // 將變數注入 style
-      cellRef.current.style.setProperty("--offset-x", `${offsetX}px`);
-      cellRef.current.style.setProperty("--offset-y", `${offsetY}px`);
-      cellRef.current.style.setProperty("--parent-w", `${parentRect.width}px`);
-      cellRef.current.style.setProperty("--parent-h", `${parentRect.height}px`);
+      cellContainerRef.current.style.setProperty("--offset-x", `${offsetX}px`);
+      cellContainerRef.current.style.setProperty("--offset-y", `${offsetY}px`);
+      cellContainerRef.current.style.setProperty("--parent-w", `${parentRect.width}px`);
+      cellContainerRef.current.style.setProperty("--parent-h", `${parentRect.height}px`);
     };
 
     updatePosition();
@@ -72,12 +71,14 @@ function PlayerCell({ player }: PlayerProps) {
   const nameLengthClass = getNameClass(name);
 
   return (
-    <div className="playerCellV2" ref={cellRef}>
-      <div className="playerImg">
-        <img src={url} alt={name} />
-      </div>
-      <div className={`playerName ${nameLengthClass}`}>
-        {renderName(name)}
+     <div className="playerCellContainer" ref={cellContainerRef}>
+      <div className="playerCellV2">
+        <div className="playerImg">
+          <img src={url} alt={name} />
+        </div>
+        <div className={`playerName ${nameLengthClass}`}>
+          {renderName(name)}
+        </div>
       </div>
     </div>
   );

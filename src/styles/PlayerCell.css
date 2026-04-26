@@ -1,3 +1,20 @@
+/* 假設 PlayerCell 的最外層 class 是 .player-cell-wrapper */
+.playerCellContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  --shared-gradient: linear-gradient(
+    25deg,
+    #00fff5 0%,
+    #00fff7 30%,
+    #d7ffff 45%,
+    #fffdfe 50%,
+    #d8d6fb 55%,
+    #296ee7 70%,
+    #286fe5 100%
+  );
+}
+
 .playerCell {
   width: 100%;
   border-radius: 999px;
@@ -35,35 +52,11 @@
 
   display: flex;
   align-items: center;
-  border: 2px solid transparent;
+  border: 1.5px solid rgba(150, 90, 150, 0.8);
 
-  background-image:
-    linear-gradient(#fff, #fff),
-    linear-gradient(
-      25deg,
-      #00fff5 0%,
-      #00fff7 30%,
-      #D7FFFF 45%,
-      #fffdfe 50%,
-      #D8D6FB 55%,
-      #296ee7 70%,
-      #286fe5 100%
-    );
-
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-
-  /* 重點：讓背景大小等於父容器的尺寸（此處由 JS 動態注入） */
-  background-size:
-    auto,
-    var(--parent-w) var(--parent-h);
-  background-repeat: no-repeat;
-
-  /* 透過 JS 計算出的偏移量 */
-  background-position:
-    0 0,
-    var(--offset-x) var(--offset-y);
-  box-shadow: 0 0px 2px 2px rgba(150, 90, 150, 0.5);
+  background-color: rgba(224, 230, 227, 0.8);
+  box-shadow: 0 0 1px 2px rgba(150, 90, 150, 0.8);
+  background-clip: content-box;
 
   .playerImg {
     flex-shrink: 0;
@@ -79,7 +72,42 @@
       object-fit: cover;
     }
   }
+}
 
+.playerCellContainer::after {
+  content: "";
+  position: absolute;
+  /* 完美的 1:1 覆蓋 */
+  inset: -0.5px;
+
+  /* 直接使用邊框，不再需要 padding 模擬 */
+  border: 2px solid transparent;
+  border-radius: 999px;
+
+  /* 漸層邊框繪製核心 */
+  background-image: var(--shared-gradient);
+  background-origin: border-box;
+  /* 讓背景只出現在邊框區域 */
+  background-size: var(--parent-w) var(--parent-h);
+  background-position: var(--offset-x) var(--offset-y);
+  background-repeat: no-repeat;
+  background-clip: border-box;
+
+  /* 只需要挖掉 border 內側的所有東西 */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask:
+    linear-gradient(#fff 0 0) padding-box exclude,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+
+  pointer-events: none;
+  z-index: 1;
+}
+
+.playerCellV2 {
   .playerName {
     flex-grow: 1;
     height: 100%;
@@ -128,7 +156,7 @@
 
 .benchPlayerCellContainer {
   .playerCellV2 {
-    background-color: #e6e0e3;
+    background-color: rgba(224, 230, 227, 0.8);
     border: 2px solid #b3dfc2;
   }
 }
