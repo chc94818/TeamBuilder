@@ -37,7 +37,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGroupId = e.target.value;
     setCurrentGroupId(newGroupId);
-    clearTeam();
+    // clearTeam();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

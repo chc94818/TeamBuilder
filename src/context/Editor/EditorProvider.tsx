@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { EditorContext } from "./EditorContext";
 import teamConfigData from "../../configs/team.json";
 
-// 1. 定義 JSON 檔案的結構型別
+// 1. 定義型別結構
 interface TeamConfig {
   TeamNum: number;
   Layout: {
@@ -17,95 +17,126 @@ interface TeamConfig {
   RowGap: number;
 }
 
-// 強制轉型以獲得型別安全
+// 陣容存檔型別: { [背景ID]: { [格位索引]: "選手名稱" } }
+type GroupPlayerMap = Record<string, Record<number, string>>;
+
 const teamConfig = teamConfigData as TeamConfig;
 const STORAGE_KEY = "editor_layout_cache";
 
-const groupFiles = import.meta.glob(
-  "../../assets/groups/**/*.{png,jpg,jpeg,svg,webp}",
-  {
-    eager: true,
-  },
-);
+// --- 資料掃描邏輯 ---
 
-// 2. 解析路徑並提取唯一的資料夾名稱 (Group IDs)
-const autoDetectedGroups = (() => {
-  // 使用 Map 紀錄每個 Group 擁有的子目錄
-  const groupIntegrityMap = new Map<string, Set<string>>();
+const backgroundFiles = import.meta.glob(
+  "../../assets/background/**/*.{png,jpg,jpeg,svg,webp}",
+  { eager: true },
+) as Record<string, { default: string }>;
 
-  Object.keys(groupFiles).forEach((path) => {
-    // 預期路徑結構: ../../assets/groups/[GroupName]/[SubDir]/file.png
-    const parts = path.split("/");
-    const groupName = parts[4];
-    const subDir = parts[5]; // 應該是 backgrounds 或 players
+const playerFiles = import.meta.glob(
+  "../../assets/players/**/*.{png,jpg,jpeg,svg,webp}",
+  { eager: true },
+) as Record<string, { default: string }>;
 
-    if (groupName && (subDir === "background" || subDir === "players")) {
-      if (!groupIntegrityMap.has(groupName)) {
-        groupIntegrityMap.set(groupName, new Set());
-      }
-      groupIntegrityMap.get(groupName)?.add(subDir);
+const autoDetectedGroups = Object.keys(backgroundFiles)
+  .map((path) => {
+    const fileName = path.split("/").pop();
+    return fileName ? fileName.replace(/\.[^/.]+$/, "") : "";
+  })
+  .filter(Boolean)
+  .sort();
+
+const allPlayers = (() => {
+  const players: Record<string, string> = {};
+  Object.entries(playerFiles).forEach(([path, module]) => {
+    const name = path
+      .split("/")
+      .pop()
+      ?.replace(/\.[^/.]+$/, "");
+    if (name) {
+      players[name] = module.default;
     }
   });
-
-  // 3. 過濾出同時具備兩種目錄的 Group
-  const validGroups: string[] = [];
-  groupIntegrityMap.forEach((subDirs, name) => {
-    if (subDirs.has("background") && subDirs.has("players")) {
-      validGroups.push(name);
-    }
-  });
-
-  return validGroups.sort();
+  return players;
 })();
+
+// --- Provider 實作 ---
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // 2. 使用結構解構從 teamConfig 提取數值
-  const { TeamNum, Layout, CellAspectRatio, CellSize, ColumnGap, RowGap } =
-    teamConfig;
-  const [isLineupRndActive, setIsLineupRndActive] = useState(false);
-  const [currentGroupId, setCurrentGroupId] = useState<string>(
-    autoDetectedGroups[0] || "",
-  );
-  const [teamSizeMode, setTeamSizeMode] = useState<"auto" | "manual">("auto");
-  const [manualTeamMemberSize, setManualTeamMemberSize] = useState(4); // 預設一個數字
+  const isFirstRender = useRef(true);
 
-  // 嘗試從 localStorage 讀取暫存，如果沒有則使用 JSON 預設值
-  const getInitialValue = (key: string, defaultValue: number | object) => {
+  const getInitialValue = <T,>(key: string, def: T): T => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    if (!saved) return def;
+    try {
       const cache = JSON.parse(saved);
-      return cache[key] !== undefined ? cache[key] : defaultValue;
+      return cache[key] !== undefined ? cache[key] : def;
+    } catch {
+      return def;
     }
-    return defaultValue;
   };
 
-  const [teamsPerRow, setTeamsPerRow] = useState(
-    getInitialValue("teamsPerRow", TeamNum),
+  // 狀態初始化
+  const [currentGroupId, setCurrentGroupId] = useState(
+    () => autoDetectedGroups[0] || "",
   );
-  const [playerCellAspectRatio, setPlayerCellAspectRatio] = useState(
-    getInitialValue("playerCellAspectRatio", CellAspectRatio),
-  );
-  const [playerCellSize, _setPlayerCellSize] = useState(
-    getInitialValue("playerCellSize", CellSize),
-  );
-  const [columnGap, setColumnGap] = useState(
-    getInitialValue("columnGap", ColumnGap),
+  const [allGroupsPlayerMap, setAllGroupsPlayerMap] = useState<GroupPlayerMap>(
+    () => getInitialValue("allGroupsPlayerMap", {}),
   );
 
-  const [rowGap, setRowGap] = useState(getInitialValue("rowGap", RowGap));
-  const [lineupLayout, setLineupLayout] = useState(
+  // 用 Ref 永遠追蹤最新的 ID，避免閉包陷阱
+  const currentGroupIdRef = useRef(currentGroupId);
+  useEffect(() => {
+    currentGroupIdRef.current = currentGroupId;
+  }, [currentGroupId]);
+
+  // 其他 UI 狀態
+  const [teamsPerRow, setTeamsPerRow] = useState(() =>
+    getInitialValue("teamsPerRow", teamConfigData.TeamNum),
+  );
+  const [playerCellSize, _setPlayerCellSize] = useState(() =>
+    getInitialValue("playerCellSize", teamConfigData.CellSize),
+  );
+  const [columnGap, setColumnGap] = useState(() =>
+    getInitialValue("columnGap", teamConfigData.ColumnGap),
+  );
+  const [rowGap, setRowGap] = useState(() =>
+    getInitialValue("rowGap", teamConfigData.RowGap),
+  );
+  const [playerCellAspectRatio, setPlayerCellAspectRatio] = useState(() =>
+    getInitialValue("playerCellAspectRatio", teamConfigData.CellAspectRatio),
+  );
+  const [lineupLayout, setLineupLayout] = useState(() =>
     getInitialValue("lineupLayout", {
-      x: Layout.x,
-      y: Layout.y,
-      w: Layout.width,
-      h: Layout.height,
+      x: teamConfigData.Layout.x,
+      y: teamConfigData.Layout.y,
+      w: teamConfigData.Layout.width,
+      h: teamConfigData.Layout.height,
     }),
   );
+  const [teamSizeMode, setTeamSizeMode] = useState<"auto" | "manual">("auto");
+  const [manualTeamMemberSize, setManualTeamMemberSize] = useState(4);
 
-  // --- 功能 3: 暫存狀態 (useEffect) ---
+  // --- 【核心修正：帶有保護鎖的同步邏輯】 ---
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // 保護鎖：如果發現 allGroupsPlayerMap 是空的，且 LocalStorage 裡其實是有資料的
+    // 這表示目前處於狀態切換的混亂期，絕對不要寫入，否則會洗掉存檔
+    const savedRaw = localStorage.getItem(STORAGE_KEY);
+    if (Object.keys(allGroupsPlayerMap).length === 0 && savedRaw) {
+      const savedData = JSON.parse(savedRaw);
+      if (
+        savedData.allGroupsPlayerMap &&
+        Object.keys(savedData.allGroupsPlayerMap).length > 0
+      ) {
+        console.warn("偵測到異常清空企圖，已攔截存檔動作");
+        return;
+      }
+    }
+
     const configToCache = {
       teamsPerRow,
       playerCellAspectRatio,
@@ -113,7 +144,9 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       columnGap,
       rowGap,
       lineupLayout,
+      allGroupsPlayerMap, // 這裡儲存的是「所有背景」的聯集
     };
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(configToCache));
   }, [
     teamsPerRow,
@@ -122,40 +155,55 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     columnGap,
     rowGap,
     lineupLayout,
+    allGroupsPlayerMap,
   ]);
 
-  // --- 功能 1: 重置回預設值 ---
-  const resetToDefault = () => {
-    setTeamsPerRow(TeamNum);
-    _setPlayerCellSize(CellSize);
-    setColumnGap(ColumnGap);
-    setRowGap(RowGap);
-    setPlayerCellAspectRatio(CellAspectRatio);
-    setLineupLayout({
-      x: Layout.x,
-      y: Layout.y,
-      w: Layout.width,
-      h: Layout.height,
+  const updateGroupPlayer = (slotIndex: number, playerName: string | null) => {
+    const activeId = currentGroupIdRef.current;
+    if (!activeId) return;
+
+    setAllGroupsPlayerMap((prev) => {
+      const next = { ...prev };
+      const groupData = { ...(next[activeId] || {}) };
+      if (playerName === null) {
+        delete groupData[slotIndex];
+      } else {
+        groupData[slotIndex] = playerName;
+      }
+      next[activeId] = groupData;
+      return next;
     });
-    localStorage.removeItem(STORAGE_KEY); // 清除暫存
   };
 
-  // 4. 封裝方法
-  const setPlayerCellSize = (val: number) => {
-    _setPlayerCellSize(Math.round(val * 100) / 100);
+  const clearCurrentGroup = () => {
+    const activeId = currentGroupIdRef.current;
+    if (!activeId) return;
+    setAllGroupsPlayerMap((prev) => ({ ...prev, [activeId]: {} }));
   };
 
-  const toggleLineupRnd = () => setIsLineupRndActive((prev) => !prev);
+  const resetToDefault = () => {
+    setTeamsPerRow(teamConfigData.TeamNum);
+    _setPlayerCellSize(teamConfigData.CellSize);
+    setColumnGap(teamConfigData.ColumnGap);
+    setRowGap(teamConfigData.RowGap);
+    setPlayerCellAspectRatio(teamConfigData.CellAspectRatio);
+    setLineupLayout({
+      x: teamConfigData.Layout.x,
+      y: teamConfigData.Layout.y,
+      w: teamConfigData.Layout.width,
+      h: teamConfigData.Layout.height,
+    });
+  };
 
   return (
     <EditorContext.Provider
       value={{
-        isLineupRndActive,
-        toggleLineupRnd,
+        isLineupRndActive: false,
+        toggleLineupRnd: () => {},
         teamsPerRow,
         setTeamsPerRow,
         playerCellSize,
-        setPlayerCellSize,
+        setPlayerCellSize: (v) => _setPlayerCellSize(Math.round(v * 100) / 100),
         columnGap,
         setColumnGap,
         rowGap,
@@ -172,6 +220,11 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         setTeamSizeMode,
         manualTeamMemberSize,
         setManualTeamMemberSize,
+        allPlayers,
+        backgroundFiles,
+        allGroupsPlayerMap,
+        updateGroupPlayer,
+        clearCurrentGroup,
       }}
     >
       {children}

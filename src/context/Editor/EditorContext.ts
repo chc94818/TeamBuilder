@@ -4,15 +4,15 @@ import { createContext, useContext } from "react";
 interface EditorContextType {
   isLineupRndActive: boolean;
   toggleLineupRnd: () => void;
-  playerCellSize: number; // 新增：選手尺寸 (px 或 %)
-  setPlayerCellSize: (size: number) => void; // 新增：設定尺寸的函式
+  playerCellSize: number;
+  setPlayerCellSize: (size: number) => void;
   teamsPerRow: number;
   setTeamsPerRow: (count: number) => void;
   columnGap: number;
   setColumnGap: (val: number) => void;
   rowGap: number;
   setRowGap: (val: number) => void;
-  // editorContext.ts 介面新增
+
   lineupLayout: { x: number; y: number; w: number; h: number };
   setLineupLayout: (layout: {
     x: number;
@@ -20,24 +20,30 @@ interface EditorContextType {
     w: number;
     h: number;
   }) => void;
+
   resetToDefault: () => void;
   playerCellAspectRatio: number;
   setPlayerCellAspectRatio: (val: number) => void;
+
   currentGroupId: string;
   setCurrentGroupId: (id: string) => void;
   availableGroups: string[];
+
   teamSizeMode: "auto" | "manual";
   setTeamSizeMode: (mode: "auto" | "manual") => void;
   manualTeamMemberSize: number;
   setManualTeamMemberSize: (size: number) => void;
+  allPlayers: Record<string, string>;
+  backgroundFiles: Record<string, { default: string }>;
+  allGroupsPlayerMap: Record<string, Record<number, string>>;
+  updateGroupPlayer: (slotIndex: number, playerName: string | null) => void;
+  clearCurrentGroup: () => void; // 新增：清空當前陣容
 }
 
-// 建立 Context 物件 (初始值設為 undefined)
 export const EditorContext = createContext<EditorContextType | undefined>(
   undefined,
 );
 
-// 自定義 Hook：方便其他組件一鍵讀取
 export const useEditor = () => {
   const context = useContext(EditorContext);
   if (!context) {

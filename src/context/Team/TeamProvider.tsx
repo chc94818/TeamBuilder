@@ -1,160 +1,101 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { TeamContext, type Player } from "./TeamContext";
 import { useEditor } from "../Editor";
 
-const allAssets = import.meta.glob(
-  "../../assets/groups/**/*.{png,jpg,jpeg,svg,webp}",
-  { eager: true },
-);
+export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { 
+    currentGroupId, 
+    teamsPerRow, 
+    teamSizeMode, 
+    manualTeamMemberSize,
+    allPlayers,           // 全域選手池 Record<string, string>
+    backgroundFiles, 
+    allGroupsPlayerMap,   // 存檔資料 Record<string, Record<number, string>>
+    updateGroupPlayer,
+    clearCurrentGroup 
+  } = useEditor();
 
-type MultiGroupPlayerMap = Record<string, Record<number, Player>>;
+  // 1. 提供給備選區 (Bench) 的資料
+  const benchPlayers = useMemo(() => 
+    Object.entries(allPlayers).map(([name, url]) => ({ id: name, name, url })), 
+  [allPlayers]);
 
-interface AssetModule {
-  default: string; // 假設它是圖片路徑或組件
-  [key: string]: unknown; // 允許其他具名匯出
-}
+  // 2. 取得當前背景圖片 (支援多種附檔名)
+  const currentBackground = useMemo(() => {
+    const key = Object.keys(backgroundFiles).find(
+      p => p.split("/").pop()?.replace(/\.[^/.]+$/, "") === currentGroupId
+    );
+    return key ? backgroundFiles[key].default : "";
+  }, [currentGroupId, backgroundFiles]);
 
-export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const { currentGroupId, teamsPerRow, teamSizeMode, manualTeamMemberSize } =
-    useEditor();
-
-  const [allGroupsPlayerMap, setAllGroupsPlayerMap] =
-    useState<MultiGroupPlayerMap>({});
-
-  const groupDataMap = useMemo(() => {
-    const map: Record<string, { background: string; players: Player[] }> = {};
-
-    (Object.entries(allAssets)as [string, AssetModule][]).forEach(([path, mod]: [string, AssetModule]) => {
-      const parts = path.split("/");
-      const groupName = parts[4];
-      const subDir = parts[5];
-      const fileName = parts[parts.length - 1].replace(/\.[^/.]+$/, "");
-
-      if (!map[groupName]) {
-        map[groupName] = { background: "", players: [] };
-      }
-
-      if (subDir === "background") {
-        map[groupName].background = mod.default;
-      } else if (subDir === "players") {
-        map[groupName].players.push({
-          id: `${groupName}_${fileName}`,
-          name: fileName,
-          url: mod.default,
-        });
-      }
-    });
-    return map;
-  }, []);
-
-  const currentGroupData = useMemo(() => {
-    return groupDataMap[currentGroupId] || { background: "", players: [] };
-  }, [currentGroupId, groupDataMap]);
-
-  const currentPlayerMap = useMemo(() => {
-    return allGroupsPlayerMap[currentGroupId] || {};
-  }, [allGroupsPlayerMap, currentGroupId]);
-
+  // 3. 【核心修正】計算總格數 (Slots)
+  // 基於「全體選手人數」計算，確保切換背景時，格子佈局不會坍塌
   const totalSlots = useMemo(() => {
     if (teamSizeMode === "manual") {
       return manualTeamMemberSize * teamsPerRow;
     }
 
-    const playersCount = currentGroupData.players.length || 1;
-    const playersPerTeam = Math.ceil(playersCount / teamsPerRow);
-    return teamsPerRow * playersPerTeam;
-  }, [
-    teamSizeMode,
-    manualTeamMemberSize,
-    currentGroupData.players,
-    teamsPerRow,
-  ]);
+    // 自動模式：根據「全體選手池」的數量來預留格子
+    const allPlayersCount = Object.keys(allPlayers).length || 1;
+    const playersPerTeam = Math.ceil(allPlayersCount / teamsPerRow);
+    
+    // 確保至少有一排，且格數足以容納所有可用選手
+    return teamsPerRow * (playersPerTeam || 1);
+  }, [teamSizeMode, manualTeamMemberSize, teamsPerRow, allPlayers]);
 
+  // 4. 建立陣容顯示清單 (對接 allPlayers 取得最新 URL)
   const lineupPlayers = useMemo(() => {
-    return Array.from(
-      { length: totalSlots },
-      (_, i) => currentPlayerMap[i] || null,
-    );
-  }, [currentPlayerMap, totalSlots]);
-
-  const assignPlayerToSlot = (player: Player, targetIndex: number) => {
-    setAllGroupsPlayerMap((prev) => {
-      const newGroupMap = { ...(prev[currentGroupId] || {}) };
-
-      // 移動/交換邏輯
-      const oldIndex = Object.keys(newGroupMap).find(
-        (key) => newGroupMap[parseInt(key)].id === player.id,
-      );
-
-      if (oldIndex !== undefined) {
-        const oldIdxNum = parseInt(oldIndex);
-        const targetPlayer = newGroupMap[targetIndex];
-        if (targetPlayer) newGroupMap[oldIdxNum] = targetPlayer;
-        else delete newGroupMap[oldIdxNum];
+    // 取得當前背景對應的存檔物件 { index: "選手名" }
+    const currentMap = allGroupsPlayerMap[currentGroupId] || {};
+    
+    return Array.from({ length: totalSlots }, (_, i) => {
+      const playerName = currentMap[i];
+      // 只有當存檔裡有名稱，且該名稱存在於全域選手池時才顯示
+      if (playerName && allPlayers[playerName]) {
+        return {
+          id: playerName,
+          name: playerName,
+          url: allPlayers[playerName],
+        };
       }
-
-      newGroupMap[targetIndex] = player;
-      return { ...prev, [currentGroupId]: newGroupMap };
+      return null;
     });
-  };
+  }, [allGroupsPlayerMap, currentGroupId, totalSlots, allPlayers]);
 
-  const movePlayer = (fromIndex: number, toIndex: number) => {
-    setAllGroupsPlayerMap((prev) => {
-      const newGroupMap = { ...(prev[currentGroupId] || {}) };
-      const fromPlayer = newGroupMap[fromIndex];
-      const toPlayer = newGroupMap[toIndex];
+  // --- 交互邏輯 ---
 
-      if (fromPlayer) newGroupMap[toIndex] = fromPlayer;
-      else delete newGroupMap[toIndex];
-
-      if (toPlayer) newGroupMap[fromIndex] = toPlayer;
-      else delete newGroupMap[fromIndex];
-
-      return { ...prev, [currentGroupId]: newGroupMap };
-    });
-  };
-
-  const addToLineup = (player: Player) => {
-    if (Object.values(currentPlayerMap).some((p) => p.id === player.id)) return;
+  const addToLineup = useCallback((player: Player) => {
+    const currentMap = allGroupsPlayerMap[currentGroupId] || {};
+    if (Object.values(currentMap).includes(player.name)) return;
 
     for (let i = 0; i < totalSlots; i++) {
-      if (!currentPlayerMap[i]) {
-        assignPlayerToSlot(player, i);
+      if (!currentMap[i]) {
+        updateGroupPlayer(i, player.name);
         break;
       }
     }
-  };
+  }, [allGroupsPlayerMap, currentGroupId, totalSlots, updateGroupPlayer]);
 
-  const removeFromLineup = (index: number) => {
-    setAllGroupsPlayerMap((prev) => {
-      const newGroupMap = { ...(prev[currentGroupId] || {}) };
-      delete newGroupMap[index];
-      return { ...prev, [currentGroupId]: newGroupMap };
-    });
-  };
+  const movePlayer = useCallback((fromIndex: number, toIndex: number) => {
+    const currentMap = allGroupsPlayerMap[currentGroupId] || {};
+    const fromName = currentMap[fromIndex] || null;
+    const toName = currentMap[toIndex] || null;
 
-  const clearTeam = () => {
-    setAllGroupsPlayerMap((prev) => ({
-      ...prev,
-      [currentGroupId]: {},
-    }));
-  };
+    updateGroupPlayer(toIndex, fromName);
+    updateGroupPlayer(fromIndex, toName);
+  }, [allGroupsPlayerMap, currentGroupId, updateGroupPlayer]);
 
   return (
-    <TeamContext.Provider
-      value={{
-        benchPlayers: currentGroupData.players, // 這裡會隨組別切換
-        currentBackground: currentGroupData.background, // 提供背景給 Lineup
-        lineupPlayers,
-        addToLineup,
-        movePlayer,
-        removeFromLineup,
-        assignPlayerToSlot,
-        clearTeam,
-      }}
-    >
+    <TeamContext.Provider value={{
+      benchPlayers,
+      currentBackground,
+      lineupPlayers,
+      addToLineup,
+      movePlayer,
+      removeFromLineup: (i) => updateGroupPlayer(i, null),
+      assignPlayerToSlot: (p, i) => updateGroupPlayer(i, p.name),
+      clearTeam: clearCurrentGroup,
+    }}>
       {children}
     </TeamContext.Provider>
   );
