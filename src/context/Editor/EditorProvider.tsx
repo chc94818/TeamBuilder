@@ -15,6 +15,7 @@ interface TeamConfig {
   CellSize: number;
   ColumnGap: number;
   RowGap: number;
+  TeamSizeMode: "auto" | "manual"; 
 }
 
 // 陣容存檔型別: { [背景ID]: { [格位索引]: "選手名稱" } }
@@ -82,6 +83,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   const [allGroupsPlayerMap, setAllGroupsPlayerMap] = useState<GroupPlayerMap>(
     () => getInitialValue("allGroupsPlayerMap", {}),
   );
+  
+  const [teamSizeMode, setTeamSizeMode] = useState<"auto" | "manual">(
+    () => getInitialValue("teamSizeMode", teamConfig.TeamSizeMode),
+  );
 
   // 用 Ref 永遠追蹤最新的 ID，避免閉包陷阱
   const currentGroupIdRef = useRef(currentGroupId);
@@ -91,29 +96,28 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // 其他 UI 狀態
   const [teamsPerRow, setTeamsPerRow] = useState(() =>
-    getInitialValue("teamsPerRow", teamConfigData.TeamNum),
+    getInitialValue("teamsPerRow", teamConfig.TeamNum),
   );
   const [playerCellSize, _setPlayerCellSize] = useState(() =>
-    getInitialValue("playerCellSize", teamConfigData.CellSize),
+    getInitialValue("playerCellSize", teamConfig.CellSize),
   );
   const [columnGap, setColumnGap] = useState(() =>
-    getInitialValue("columnGap", teamConfigData.ColumnGap),
+    getInitialValue("columnGap", teamConfig.ColumnGap),
   );
   const [rowGap, setRowGap] = useState(() =>
-    getInitialValue("rowGap", teamConfigData.RowGap),
+    getInitialValue("rowGap", teamConfig.RowGap),
   );
   const [playerCellAspectRatio, setPlayerCellAspectRatio] = useState(() =>
-    getInitialValue("playerCellAspectRatio", teamConfigData.CellAspectRatio),
+    getInitialValue("playerCellAspectRatio", teamConfig.CellAspectRatio),
   );
   const [lineupLayout, setLineupLayout] = useState(() =>
     getInitialValue("lineupLayout", {
-      x: teamConfigData.Layout.x,
-      y: teamConfigData.Layout.y,
-      w: teamConfigData.Layout.width,
-      h: teamConfigData.Layout.height,
+      x: teamConfig.Layout.x,
+      y: teamConfig.Layout.y,
+      w: teamConfig.Layout.width,
+      h: teamConfig.Layout.height,
     }),
   );
-  const [teamSizeMode, setTeamSizeMode] = useState<"auto" | "manual">("auto");
   const [manualTeamMemberSize, setManualTeamMemberSize] = useState(4);
 
   // --- 【核心修正：帶有保護鎖的同步邏輯】 ---
@@ -121,20 +125,6 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
-    }
-
-    // 保護鎖：如果發現 allGroupsPlayerMap 是空的，且 LocalStorage 裡其實是有資料的
-    // 這表示目前處於狀態切換的混亂期，絕對不要寫入，否則會洗掉存檔
-    const savedRaw = localStorage.getItem(STORAGE_KEY);
-    if (Object.keys(allGroupsPlayerMap).length === 0 && savedRaw) {
-      const savedData = JSON.parse(savedRaw);
-      if (
-        savedData.allGroupsPlayerMap &&
-        Object.keys(savedData.allGroupsPlayerMap).length > 0
-      ) {
-        console.warn("偵測到異常清空企圖，已攔截存檔動作");
-        return;
-      }
     }
 
     const configToCache = {
@@ -145,6 +135,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       rowGap,
       lineupLayout,
       allGroupsPlayerMap, // 這裡儲存的是「所有背景」的聯集
+      teamSizeMode,
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(configToCache));
@@ -156,6 +147,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     rowGap,
     lineupLayout,
     allGroupsPlayerMap,
+    teamSizeMode,
   ]);
 
   const updateGroupPlayer = (slotIndex: number, playerName: string | null) => {
@@ -182,16 +174,16 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const resetToDefault = () => {
-    setTeamsPerRow(teamConfigData.TeamNum);
-    _setPlayerCellSize(teamConfigData.CellSize);
-    setColumnGap(teamConfigData.ColumnGap);
-    setRowGap(teamConfigData.RowGap);
-    setPlayerCellAspectRatio(teamConfigData.CellAspectRatio);
+    setTeamsPerRow(teamConfig.TeamNum);
+    _setPlayerCellSize(teamConfig.CellSize);
+    setColumnGap(teamConfig.ColumnGap);
+    setRowGap(teamConfig.RowGap);
+    setPlayerCellAspectRatio(teamConfig.CellAspectRatio);
     setLineupLayout({
-      x: teamConfigData.Layout.x,
-      y: teamConfigData.Layout.y,
-      w: teamConfigData.Layout.width,
-      h: teamConfigData.Layout.height,
+      x: teamConfig.Layout.x,
+      y: teamConfig.Layout.y,
+      w: teamConfig.Layout.width,
+      h: teamConfig.Layout.height,
     });
   };
 

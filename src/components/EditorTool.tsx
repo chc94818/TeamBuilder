@@ -89,6 +89,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
       CellAspectRatio: playerCellAspectRatio,
       ColumnGap: columnGap,
       RowGap: rowGap,
+      TeamSizeMode: teamSizeMode,
     };
 
     const blob = new Blob([JSON.stringify(output, null, 2)], {
