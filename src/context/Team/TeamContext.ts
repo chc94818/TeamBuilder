@@ -5,6 +5,7 @@ export interface Player {
   id: string; // 這裡我們用檔名當 ID
   name: string;
   url: string;
+  isUsed: boolean | null,
 }
 
 interface TeamContextType {

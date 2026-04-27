@@ -4,6 +4,8 @@ import { createContext, useContext } from "react";
 interface EditorContextType {
   isLineupRndActive: boolean;
   toggleLineupRnd: () => void;
+  isGlobalPlayerFilter: boolean;
+  toggleGlobalPlayerFilter: () => void;
   playerCellSize: number;
   setPlayerCellSize: (size: number) => void;
   teamsPerRow: number;

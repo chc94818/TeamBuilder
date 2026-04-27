@@ -16,6 +16,7 @@ interface TeamConfig {
   ColumnGap: number;
   RowGap: number;
   TeamSizeMode: "auto" | "manual"; 
+  GlobalPlayerFilter: boolean;
 }
 
 // 陣容存檔型別: { [背景ID]: { [格位索引]: "選手名稱" } }
@@ -77,6 +78,11 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // 狀態初始化
+  const [isLineupRndActive, setIsLineupRndActive] = useState(false);
+  const [isGlobalPlayerFilter, setIsGlobalPlayerFilter] = useState<boolean>(
+    () => getInitialValue("isGlobalPlayerFilter", teamConfig.GlobalPlayerFilter),
+  );
+  
   const [currentGroupId, setCurrentGroupId] = useState(
     () => autoDetectedGroups[0] || "",
   );
@@ -136,6 +142,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
       lineupLayout,
       allGroupsPlayerMap, // 這裡儲存的是「所有背景」的聯集
       teamSizeMode,
+      isGlobalPlayerFilter,
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(configToCache));
@@ -148,6 +155,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     lineupLayout,
     allGroupsPlayerMap,
     teamSizeMode,
+    isGlobalPlayerFilter,
   ]);
 
   const updateGroupPlayer = (slotIndex: number, playerName: string | null) => {
@@ -187,11 +195,16 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const toggleLineupRnd = () => setIsLineupRndActive((prev) => !prev);
+  const toggleGlobalPlayerFilter = () => setIsGlobalPlayerFilter((prev) => !prev);
+
   return (
     <EditorContext.Provider
       value={{
-        isLineupRndActive: false,
-        toggleLineupRnd: () => {},
+        isLineupRndActive,
+        toggleLineupRnd,
+        isGlobalPlayerFilter,
+        toggleGlobalPlayerFilter,
         teamsPerRow,
         setTeamsPerRow,
         playerCellSize,

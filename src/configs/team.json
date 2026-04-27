@@ -10,5 +10,6 @@
   "CellAspectRatio": 3.425,
   "ColumnGap": 32,
   "RowGap": 30,
-  "TeamSizeMode": "manual"
+  "TeamSizeMode": "manual",
+  "GlobalPlayerFilter": true
 }

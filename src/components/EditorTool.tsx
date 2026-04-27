@@ -11,6 +11,8 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
   const {
     isLineupRndActive,
     toggleLineupRnd,
+    isGlobalPlayerFilter,
+    toggleGlobalPlayerFilter,
     playerCellSize,
     setPlayerCellSize,
     teamsPerRow,
@@ -111,7 +113,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
       <div className="toolPanel">
         <section className="leftPanel">
           <h3>排版設定</h3>
-          
+
           {/* 拖曳模式 */}
           <div className="editorOption lineupRndTool">
             <div className="editorControlItem">
@@ -125,7 +127,9 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   />
                   <span className="slider round"></span>
                 </label>
-                <span className="statusText">{isLineupRndActive ? "ON" : "OFF"}</span>
+                <span className="statusText">
+                  {isLineupRndActive ? "ON" : "OFF"}
+                </span>
               </div>
             </div>
           </div>
@@ -140,7 +144,9 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   min="1"
                   max="20"
                   value={teamsPerRow}
-                  onChange={(e) => setTeamsPerRow(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) =>
+                    setTeamsPerRow(Math.max(1, parseInt(e.target.value) || 1))
+                  }
                   className="numberInput"
                 />
                 <span className="unit">隊</span>
@@ -159,7 +165,9 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                       <input
                         type="checkbox"
                         checked={isManual}
-                        onChange={(e) => setTeamSizeMode(e.target.checked ? "manual" : "auto")}
+                        onChange={(e) =>
+                          setTeamSizeMode(e.target.checked ? "manual" : "auto")
+                        }
                       />
                       <span className="slider round"></span>
                     </label>
@@ -171,7 +179,9 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                     <input
                       type="number"
                       value={manualTeamMemberSize}
-                      onChange={(e) => setManualTeamMemberSize(parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setManualTeamMemberSize(parseInt(e.target.value) || 0)
+                      }
                       className="numberInput"
                     />
                     <span className="unit">人</span>
@@ -240,7 +250,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
 
         <section className="centerPanel">
           <h3>選手卡片設定</h3>
-          
+
           {/* 寬高比 - 保持數值，不標示 px/ % */}
           <div className="editorOption playerplayerCellAspectRatioTool">
             <div className="editorControlItem">
@@ -252,14 +262,18 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
                   max="5.0"
                   step={0.01}
                   value={playerCellAspectRatio}
-                  onChange={(e) => setPlayerCellAspectRatio(parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    setPlayerCellAspectRatio(parseFloat(e.target.value))
+                  }
                   className="numberSlider"
                 />
                 <input
                   step={0.01}
                   type="number"
                   value={playerCellAspectRatio}
-                  onChange={(e) => setPlayerCellAspectRatio(parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    setPlayerCellAspectRatio(parseFloat(e.target.value))
+                  }
                   className="numberInput"
                 />
                 <span className="unit">ratio</span>
@@ -342,6 +356,26 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
           <h3>組別設定</h3>
           <div className="editorOption groupSelectTool">
             <div className="editorControlItem">
+              <div className="editorOption lineupRndTool">
+                <div className="editorControlItem">
+                  <span className="labelText">跨組選手FILTER</span>
+                  <div className="inputGroup">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={isGlobalPlayerFilter}
+                        onChange={toggleGlobalPlayerFilter}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                    <span className="statusText">
+                      {isGlobalPlayerFilter ? "ON" : "OFF"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="editorControlItem">
               <span>當前組別</span>
               <select
                 value={currentGroupId}
@@ -377,13 +411,19 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
               ))}
             </div>
           </div>
-          
+
           <h3>介面操作</h3>
           <div className="editorOption stateActions">
             <div className="actionButtons">
-              <button onClick={resetToDefault} className="resetButton">重置排版</button>
-              <button onClick={downloadConfig} className="downloadButton">下載 JSON</button>
-              <button onClick={clearTeam} className="clearLineupsButton">清空版面</button>
+              <button onClick={resetToDefault} className="resetButton">
+                重置排版
+              </button>
+              <button onClick={downloadConfig} className="downloadButton">
+                下載 JSON
+              </button>
+              <button onClick={clearTeam} className="clearLineupsButton">
+                清空版面
+              </button>
             </div>
           </div>
         </section>

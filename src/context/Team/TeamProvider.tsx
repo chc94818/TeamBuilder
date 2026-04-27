@@ -12,13 +12,38 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     backgroundFiles, 
     allGroupsPlayerMap,   // 存檔資料 Record<string, Record<number, string>>
     updateGroupPlayer,
-    clearCurrentGroup 
+    clearCurrentGroup,
+    isGlobalPlayerFilter 
   } = useEditor();
 
-  // 1. 提供給備選區 (Bench) 的資料
-  const benchPlayers = useMemo(() => 
-    Object.entries(allPlayers).map(([name, url]) => ({ id: name, name, url })), 
-  [allPlayers]);
+  const benchPlayers = useMemo(() => {
+    // 建立一個用於快速查詢的「已使用選手集合」
+    const usedNames = new Set<string>();
+
+    if (isGlobalPlayerFilter) {
+      // --- 全域過濾模式：掃描所有組別的存檔 ---
+      Object.values(allGroupsPlayerMap).forEach((groupMap) => {
+        Object.values(groupMap).forEach((name) => {
+          if (name) usedNames.add(name);
+        });
+      });
+    } else {
+      // --- 單組過濾模式：只掃描當前組別 ---
+      const currentMap = allGroupsPlayerMap[currentGroupId] || {};
+      Object.values(currentMap).forEach((name) => {
+        if (name) usedNames.add(name);
+      });
+    }
+
+    // 映射所有選手，並標記 isUsed
+    return Object.entries(allPlayers).map(([name, url]) => ({
+      id: name,
+      name: name,
+      url: url,
+      // 只要名字在 usedNames 集合中，就標記為 true
+      isUsed: usedNames.has(name),
+    }));
+  }, [allPlayers, allGroupsPlayerMap, currentGroupId, isGlobalPlayerFilter]);
 
   // 2. 取得當前背景圖片 (支援多種附檔名)
   const currentBackground = useMemo(() => {
@@ -56,6 +81,7 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: playerName,
           name: playerName,
           url: allPlayers[playerName],
+          isUsed: true,
         };
       }
       return null;

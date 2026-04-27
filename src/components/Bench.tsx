@@ -57,7 +57,7 @@ function Bench() {
 
       <div className="bench">
         {benchPlayers.map((player) => {
-          const isUsed = lineupPlayers.some((p) => p?.id === player.id);
+          const {isUsed} = player;
           const isCurrentTarget = benchDragOverId === player.id;
 
           return (
