@@ -24,6 +24,7 @@ interface EditorContextType {
   }) => void;
 
   resetToDefault: () => void;
+  resetToDefaultAndCache: () => void;
   playerCellAspectRatio: number;
   setPlayerCellAspectRatio: (val: number) => void;
 

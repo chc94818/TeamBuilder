@@ -24,6 +24,7 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
     lineupLayout,
     setLineupLayout,
     resetToDefault,
+    resetToDefaultAndCache,
     playerCellAspectRatio,
     setPlayerCellAspectRatio,
     setCurrentGroupId,
@@ -415,14 +416,20 @@ function EditorTool({ onExport }: { onExport: (scale: number) => void }) {
           <h3>介面操作</h3>
           <div className="editorOption stateActions">
             <div className="actionButtons">
+              <button onClick={downloadConfig} className="downloadButton">
+                下載設定
+              </button>
               <button onClick={resetToDefault} className="resetButton">
                 重置排版
               </button>
-              <button onClick={downloadConfig} className="downloadButton">
-                下載 JSON
+              <button onClick={resetToDefaultAndCache} className="resetAllButton">
+                <div>全部重置</div>
+                <div>(隊伍/排版)</div>
               </button>
+            </div>
+            <div className="actionButtons">
               <button onClick={clearTeam} className="clearLineupsButton">
-                清空版面
+                重置目前隊伍
               </button>
             </div>
           </div>

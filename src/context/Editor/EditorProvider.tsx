@@ -195,6 +195,11 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const resetToDefaultAndCache = () => {
+    resetToDefault();
+    setAllGroupsPlayerMap({});
+  }
+
   const toggleLineupRnd = () => setIsLineupRndActive((prev) => !prev);
   const toggleGlobalPlayerFilter = () => setIsGlobalPlayerFilter((prev) => !prev);
 
@@ -216,6 +221,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
         lineupLayout,
         setLineupLayout,
         resetToDefault,
+        resetToDefaultAndCache,
         playerCellAspectRatio,
         setPlayerCellAspectRatio,
         currentGroupId,
